@@ -1,0 +1,9 @@
+/include/ "system-conf.dtsi"
+/ {
+	dma_proxy {
+		compatible ="xlnx,dma_proxy";
+		dmas = <&DMA_axi_dma_0 0  &DMA_axi_dma_0 1>;
+		dma-names = "dma_proxy_tx_0", "dma_proxy_rx_0";
+	};
+};
+
