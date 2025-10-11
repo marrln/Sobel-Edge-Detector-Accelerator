@@ -4,6 +4,9 @@
 # vscode
 .vscode
 
+# github
+.github
+
 # Object files
 *.o
 *.ko
