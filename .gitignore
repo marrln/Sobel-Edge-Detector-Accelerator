@@ -4,6 +4,9 @@
 # vscode
 .vscode
 
+# txt files
+*.txt
+
 # VHDL LS
 *.toml 
 
