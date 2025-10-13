@@ -4,6 +4,9 @@
 # vscode
 .vscode
 
+# VHDL LS
+*.toml 
+
 # github
 .github
 
