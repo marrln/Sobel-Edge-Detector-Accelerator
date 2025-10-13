@@ -1,9 +1,9 @@
-#include <stdio.h>
 #include <time.h>
 
 #ifdef _WIN32
     #include <windows.h>
-    #include <stdint.h>
+#else
+    #include <time.h>
 #endif
 
 double get_current_time(void) {

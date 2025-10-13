@@ -15,4 +15,4 @@ double get_current_time(void);
  */
 double get_elapsed_time(double start_time);
 
-#endif
+#endif // TIMER_H

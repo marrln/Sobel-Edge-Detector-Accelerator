@@ -1,11 +1,5 @@
 #include <stdio.h>
 #include <stdint.h>
-#include <time.h>
-
-#if defined(_WIN32) || defined(_WIN64)
-    #include <windows.h>
-#endif
-
 #include "sobel_constants.h"
 
 void print_matrix(const int *matrix, int rows, int cols) {

@@ -5,4 +5,4 @@
 #define ROW 512
 #define COLUMN 512
 
-#endif 
+#endif // SOBEL_CONSTANTS_H 

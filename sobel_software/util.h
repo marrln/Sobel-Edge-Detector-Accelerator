@@ -1,5 +1,5 @@
-#ifndef __UTIL_H
-#define __UTIL_H
+#ifndef UTIL_H
+#define UTIL_H
 
 #include <stdio.h>
 #include <stdint.h>
@@ -45,4 +45,4 @@ int save_raw_image(const char *filename, uint8_t image[ROW][COLUMN]);
  */
 int save_csv_image(FILE *file, uint8_t image[ROW][COLUMN]);
 
-#endif
+#endif // UTIL_H
