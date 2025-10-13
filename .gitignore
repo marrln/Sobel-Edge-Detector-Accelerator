@@ -9,6 +9,8 @@
 
 # VHDL LS
 *.toml 
+*.jou
+*.log
 
 # github
 .github
