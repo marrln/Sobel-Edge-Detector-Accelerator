@@ -29,46 +29,6 @@ entity sobel_processor is
 end entity sobel_processor;
 
 architecture Structural of sobel_processor is
-    component top_level_module is
-        generic (
-            rows    : positive := 480;
-            columns : positive := 640;
-            pixels  : positive := 307200
-        );
-        port (
-            clk     : in std_logic;
-            rst_n   : in std_logic;
-            s_data  : in std_logic_vector(digits - 1 downto 0);
-            s_valid : in std_logic;
-            s_ready : out std_logic;
-            s_last  : in std_logic;
-            m_data  : out std_logic_vector(digits - 1 downto 0);
-            m_valid : out std_logic;
-            m_ready : in std_logic;
-            m_last  : out std_logic
-        );
-    end component top_level_module;
-    
-    component pixel_counter is
-        port (
-            clk     : in std_logic;
-            rst_n   : in std_logic;
-            s_valid : in std_logic;
-            s_last  : in std_logic;
-            m_data  : out std_logic_vector(31 downto 0)
-        );
-    end component pixel_counter;
-    
-    component cycle_counter is
-        port (
-            clk     : in std_logic;
-            rst_n   : in std_logic;
-            s_valid : in std_logic;
-            s_last  : in std_logic;
-            m_data  : out std_logic_vector(31 downto 0)
-        );
-    end component cycle_counter;
-    
     signal s_valid : std_logic;
     signal s_ready : std_logic;
     signal s_last  : std_logic;
@@ -107,12 +67,13 @@ begin
     output_pixel_cnt_en <= m_valid and m_ready;
     sobel_rst_n         <= rst_n and en;
     
-    Input_Pixel_Counter : pixel_counter port map (
-        clk => clk_ext, rst_n => sobel_rst_n, s_valid => input_pixel_cnt_en,
-        s_last => s_last, m_data => input_pixel_cnt
-    );
+    Input_Pixel_Counter : entity work.pixel_counter
+        port map (
+            clk => clk_ext, rst_n => sobel_rst_n, s_valid => input_pixel_cnt_en,
+            s_last => s_last, m_data => input_pixel_cnt
+        );
     
-    Sobel_Edge_Filter : top_level_module
+    Sobel_Edge_Filter : entity work.top_level_module
         generic map (rows => rows, columns => columns, pixels => pixels)
         port map (
             clk => clk_int, rst_n => sobel_rst_n, s_valid => s_valid,
@@ -121,13 +82,15 @@ begin
             m_data => m_data
         );
     
-    Output_Pixel_Counter : pixel_counter port map (
-        clk => clk_ext, rst_n => sobel_rst_n, s_valid => output_pixel_cnt_en,
-        s_last => m_last, m_data => output_pixel_cnt
-    );
+    Output_Pixel_Counter : entity work.pixel_counter
+        port map (
+            clk => clk_ext, rst_n => sobel_rst_n, s_valid => output_pixel_cnt_en,
+            s_last => m_last, m_data => output_pixel_cnt
+        );
     
-    Cycle_Counter : cycle_counter port map (
-        clk => clk_ext, rst_n => sobel_rst_n, s_valid => input_pixel_cnt_en,
-        s_last => m_last, m_data => cycle_cnt
-    );
+    Cycle_Counter : entity work.cycle_counter
+        port map (
+            clk => clk_ext, rst_n => sobel_rst_n, s_valid => input_pixel_cnt_en,
+            s_last => m_last, m_data => cycle_cnt
+        );
 end Structural;
