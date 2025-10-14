@@ -5,9 +5,9 @@ use WORK.MY_TYPES.ALL;
 
 entity sobel_processor is
     generic (
-        rows    : positive := 480;
-        columns : positive := 640;
-        pixels  : positive := 307200
+        rows    : positive := 512;
+        columns : positive := 512;
+        pixels  : positive := rows * columns
     );
     port (
         clk_int          : in std_logic;
