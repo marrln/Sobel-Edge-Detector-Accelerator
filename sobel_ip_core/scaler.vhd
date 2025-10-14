@@ -33,7 +33,9 @@ begin
             m_valid <= s_valid;
             m_last  <= s_last;
             if m_ready = '1' then
-                m_data <= s_data;
+                m_data <= std_logic_vector(shift_right(unsigned(s_data), 2));
+                -- m_data <= s_data
+                -- m_data <= std_logic_vector(shift_right(signed(s_data), 2));
             end if;
         end if;
     end process;
