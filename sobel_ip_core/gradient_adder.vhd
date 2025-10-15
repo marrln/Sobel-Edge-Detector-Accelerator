@@ -1,4 +1,4 @@
--- Handshaking adder for two signed values
+-- AXI4-Stream compliant handshaking adder for two signed values
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
@@ -15,27 +15,42 @@ entity gradient_adder is
         m_valid : out std_logic;
         m_ready : in std_logic;
         m_last  : out std_logic;
-        m_data  : out std_logic_vector((digits + 8) - 1 downto 0)
+        m_data  : out std_logic_vector(gradient_width - 1 downto 0)
     );
 end entity gradient_adder;
 
-architecture Behavioral of gradient_adder is
+architecture behavioral of gradient_adder is
+    signal data_reg  : std_logic_vector(gradient_width - 1 downto 0) := (others => '0');
+    signal valid_reg : std_logic := '0';
+    signal last_reg  : std_logic := '0';
+    signal ready_int : std_logic := '0';
 begin
     process(clk, rst_n)
     begin
         if rst_n = '0' then
-            s_ready <= '0';
-            m_valid <= '0';
-            m_last  <= '0';
-            m_data  <= (others => '0');
+            valid_reg <= '0';
+            last_reg  <= '0';
+            data_reg  <= (others => '0');
         elsif rising_edge(clk) then
-            s_ready <= m_ready;
-            m_valid <= s_valid;
-            m_last  <= s_last;
-            if m_ready = '1' then
-                m_data <= std_logic_vector(resize(signed(s_data(0)), m_data'length) + 
-                                          resize(signed(s_data(1)), m_data'length));
+            -- Register new data when we accept input
+            if s_valid = '1' and ready_int = '1' then
+                data_reg  <= std_logic_vector(resize(signed(s_data(0)), data_reg'length) + resize(signed(s_data(1)), data_reg'length));
+                last_reg  <= s_last;
+                valid_reg <= '1';
+            -- Clear valid when output is accepted
+            elsif m_ready = '1' and valid_reg = '1' then
+                valid_reg <= '0';
             end if;
         end if;
     end process;
-end Behavioral;
+
+    -- AXI-compliant handshake logic:
+    -- We're ready for new input when we don't have valid data OR when current data is being accepted
+    ready_int <= '1' when (valid_reg = '0') or (m_ready = '1' and valid_reg = '1') else '0';
+    
+    -- Output assignments
+    s_ready <= ready_int;
+    m_valid <= valid_reg;
+    m_last  <= last_reg;
+    m_data  <= data_reg;
+end architecture behavioral;
