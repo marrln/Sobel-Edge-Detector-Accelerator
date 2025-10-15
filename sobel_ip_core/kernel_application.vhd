@@ -71,7 +71,7 @@ begin
                 
                 -- CORRECTED: Standard Sobel kernels (not flipped)
                 -- Gx = [-1, 0, 1; -2, 0, 2; -1, 0, 1]
-                -- Gy = [-1, -2, -1; 0, 0, 0; 1, 2, 1]
+                -- Gy = [-1, -2, -1; 0, 0, 0; 1, 2, 1] TODO: TRY DIFFERRENT SIGNS
                 gx_temp := resize(p02 - p00 + 2*(p12 - p10) + p22 - p20, kernel_width);
                 gy_temp := resize(p20 - p00 + 2*(p21 - p01) + p22 - p02, kernel_width);
 
