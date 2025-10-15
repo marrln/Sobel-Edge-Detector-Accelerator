@@ -1,6 +1,7 @@
 -- AXI4-Stream Sobel processing core: scaler -> window buffer -> sobel pipeline
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
 use WORK.MY_TYPES.ALL;
 
 entity sobel_processing_core is
@@ -86,7 +87,7 @@ architecture structural of sobel_processing_core is
     signal window_last  : std_logic := '0';
     
 begin
-    Div4_Scaler : scaler
+    div4_scaler : scaler
         port map (
             clk => clk, rst_n => rst_n, 
             s_valid => s_valid, s_ready => s_ready,
@@ -95,7 +96,7 @@ begin
             m_last => scaled_last, m_data => scaled_data
         );
     
-    Window_Producer_Buffer : window_buffer
+    window_producer_buffer : window_buffer
         generic map (rows => rows, columns => columns, pixels => pixels)
         port map (
             clk => clk, rst_n => rst_n, 
@@ -105,7 +106,7 @@ begin
             m_last => window_last, m_data => window_data
         );
     
-    Sobel_Pipeline : sobel_pipeline
+    sobel_pipeline_part : sobel_pipeline
         port map (
             clk => clk, rst_n => rst_n, 
             s_valid => window_valid, s_ready => window_ready,
@@ -113,4 +114,4 @@ begin
             m_valid => m_valid, m_ready => m_ready, 
             m_last => m_last, m_data => m_data
         );
-end architecture structural;
+end structural;
