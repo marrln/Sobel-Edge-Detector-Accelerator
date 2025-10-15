@@ -30,14 +30,11 @@ puts "========================================="
 
 # All source files 
 set source_files [list \
-    "gradient_adder_tree.vhd" \
-    "gradient_adder.vhd" \
     "kernel_application.vhd" \
     "manhattan_norm.vhd" \
     "my_types.vhd" \
     "scaler.vhd" \
     "sobel_accelerator.vhd" \
-    "sobel_pipeline.vhd" \
     "sobel_processing_core.vhd" \
     "sobel_statistics.vhd" \
     "window_buffer.vhd" \
