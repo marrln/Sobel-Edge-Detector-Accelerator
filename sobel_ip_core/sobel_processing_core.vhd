@@ -74,15 +74,17 @@ architecture structural of sobel_processing_core is
         );
     end component;
 
-    signal scaled_data  : std_logic_vector(pixel_width - 1 downto 0);
-    signal scaled_ready : std_logic;
-    signal scaled_valid : std_logic;
-    signal scaled_last  : std_logic;
+    -- Inter-stage signals between pipeline components
+    signal scaled_data  : std_logic_vector(pixel_width - 1 downto 0) := (others => '0');
+    signal scaled_ready : std_logic := '0';
+    signal scaled_valid : std_logic := '0';
+    signal scaled_last  : std_logic := '0';
     
-    signal window_data  : pixel_window;
-    signal window_ready : std_logic;
-    signal window_valid : std_logic;
-    signal window_last  : std_logic;
+    signal window_data  : pixel_window := (others => (others => (others => '0')));
+    signal window_ready : std_logic := '0';
+    signal window_valid : std_logic := '0';
+    signal window_last  : std_logic := '0';
+    
 begin
     Div4_Scaler : scaler
         port map (
