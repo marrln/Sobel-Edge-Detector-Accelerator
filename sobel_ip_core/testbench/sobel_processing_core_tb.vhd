@@ -216,7 +216,7 @@ begin
             send_pixel(s_data, s_valid, s_last, s_ready, pixel_val, px_count, IMG_WIDTH);
 
             px_count := px_count + 1;
-            if px_count <= 10 or px_count mod 10000 = 0 then
+            if px_count mod 100000 = 0 then
                 report "Sent pixel " & integer'image(px_count) & " = " & integer'image(pix) & 
                        ", ready=" & std_logic'image(s_ready);
             end if;
@@ -233,19 +233,20 @@ begin
         variable L : line;
         variable out_count : integer := 0;
         variable output_val : integer;
+        constant TOTAL_OUTPUT_PIXELS : integer := (IMG_WIDTH - 2) * (IMG_HEIGHT - 2);
     begin
         wait until rst_n = '1';
-        wait for 20 us;
+        wait for 100 us;  -- Wait for pipeline to start producing outputs
         wait until rising_edge(clk);
         
         report "Starting output capture...";
-        while out_count < TOTAL_PIXELS loop
+        loop
             receive_pixel(m_data, m_valid, m_ready, m_last, output_val);
             write(L, output_val);
             writeline(output_f, L);
             out_count := out_count + 1;
             
-            if out_count <= 10 or out_count mod 10000 = 0 then
+            if out_count mod 100000 = 0 then
                 report "Received pixel " & integer'image(out_count) & " = " & integer'image(output_val);
             end if;
         end loop;
