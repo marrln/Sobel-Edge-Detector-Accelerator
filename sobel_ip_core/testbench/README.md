@@ -1,13 +1,18 @@
-# Sobel IP Core Testbench
+# Sobel IP Core Testbenches
 
 ## Overview
-This testbench validates the Sobel Edge Detector IP Core using raw image files.
+These testbenches validate the Sobel Edge Detector IP Core using raw image files. 
 
-## Files
-- `sobel_processor_tb.vhd` - Main testbench file
+There are two testbenches:
+- `sobel_accelerator_tb.vhd` - Tests the full accelerator with CDC and FIFOs
+- `sobel_processing_core_tb.vhd` - Tests the processing core pipeline
+
+There are also scripts to run the simulations easily in Vivado 2022.2.
 - `run_sim.tcl` - Vivado 2022.2 simulation script
-- `run_sim.bat` - Windows batch file for easy execution
-- `run_modelsim.tcl` - ModelSim/QuestaSim simulation script
+
+For Windows users:
+- `run_sim_accelerator.bat` - Windows batch file for accelerator testbench
+- `run_sim_accelerator.bat` - Dedicated accelerator testbench runner
 
 ## Test Configuration
 - **Vivado Version**: 2022.2
@@ -24,26 +29,16 @@ This testbench validates the Sobel Edge Detector IP Core using raw image files.
 **Windows - Easy Method:**
 ```cmd
 cd sobel_ip_core\testbench
-run_sim.bat
+run_sim.bat          # Runs accelerator testbench
+run_sim_accelerator.bat  # Same as above
+run_sim_pipeline.bat     # Runs pipeline testbench
 ```
 
 **Command Line:**
 ```bash
 cd sobel_ip_core/testbench
-vivado -mode batch -source run_sim.tcl
-```
-
-**Vivado GUI:**
-```tcl
-# In Vivado Tcl Console
-cd [path_to_project]/sobel_ip_core/testbench
-source run_sim.tcl
-```
-
-### Using ModelSim/QuestaSim
-```bash
-cd sobel_ip_core/testbench
-vsim -do run_modelsim.tcl
+vivado -mode batch -source run_sim.tcl                             # Accelerator
+vivado -mode batch -source run_sim.tcl -tclargs sobel_pipeline_tb  # Pipeline
 ```
 
 ### Manual Compilation
@@ -52,38 +47,42 @@ vsim -do run_modelsim.tcl
 vcom -2008 ../my_types.vhd
 vcom -2008 ../scaler.vhd
 vcom -2008 ../window_buffer.vhd
-vcom -2008 ../smoother_1d.vhd
-vcom -2008 ../derivative_1d.vhd
 vcom -2008 ../kernel_application.vhd
+vcom -2008 ../manhattan_norm.vhd
 vcom -2008 ../gradient_adder.vhd
 vcom -2008 ../gradient_adder_tree.vhd
-vcom -2008 ../magnitude_adder.vhd
-vcom -2008 ../gradient_magnitude.vhd
 vcom -2008 ../sobel_pipeline.vhd
-vcom -2008 ../top_level_module.vhd
-vcom -2008 ../pixel_counter.vhd
-vcom -2008 ../cycle_counter.vhd
-vcom -2008 ../sobel_processor.vhd
+vcom -2008 ../sobel_processing_core.vhd
+vcom -2008 ../sobel_statistics.vhd
+vcom -2008 ../sobel_accelerator.vhd
 
 # Compile testbench
-vcom -2008 sobel_processor_tb.vhd
+vcom -2008 sobel_accelerator_tb.vhd  # or sobel_pipeline_tb.vhd
 
 # Simulate
-vsim work.sobel_processor_tb
+vsim work.sobel_accelerator_tb  # or work.sobel_pipeline_tb
 run -all
 ```
 
-## What the Testbench Does
+## What the Testbenches Do
 
-1. **Reset & Initialization**: Applies reset and enables the processor
+Both testbenches perform similar operations:
+
+1. **Reset & Initialization**: Applies reset and enables the DUT
 2. **Input Stimulus**: Reads `lena_512_512_raw` and streams pixels via AXI4-Stream
-3. **Output Capture**: Receives processed pixels and writes to `output_lena_512_512_raw`
-4. **Performance Monitoring**: Tracks:
-   - Input pixel count
-   - Output pixel count
-   - Cycle count
-   - Processing time
-5. **Report Generation**: Creates `simulation_report.txt` with statistics
+3. **Output Capture**: Receives processed pixels and writes to output file
+4. **Performance Monitoring**: Tracks pixel counts and cycles
+5. **Report Generation**: Creates simulation reports with statistics
+
+**Accelerator Testbench** (`sobel_accelerator_tb`):
+- Tests full accelerator with dual-clock FIFOs and CDC
+- Uses external clock (100 MHz) for I/O, internal (200 MHz) for processing
+- Includes telemetry outputs
+
+**Pipeline Testbench** (`sobel_pipeline_tb`):
+- Tests processing core only (scaler → window_buffer → sobel_pipeline)
+- Single clock domain
+- Simpler for debugging pipeline logic
 
 ## AXI4-Stream Protocol
 The testbench validates:
@@ -92,11 +91,14 @@ The testbench validates:
 - Proper data transfer timing
 
 ## Performance Counters
-The testbench monitors internal counters (accessible via AXI4-Lite):
-- `0x43c10000` - Enable register
-- `0x43c10004` - Cycle counter
-- `0x43c10008` - Input pixel counter
-- `0x43c1000c` - Output pixel counter
+The accelerator testbench monitors telemetry outputs from `sobel_accelerator`:
+- `input_pixel_cnt` - Total input pixels processed
+- `output_pixel_cnt` - Total output pixels generated  
+- `cycle_cnt` - Total processing cycles (internal clock domain)
+
+For AXI4-Lite access in hardware (if implemented):
+- Base address depends on Vivado IP integrator assignment
+- Registers: enable (0x00), cycle_cnt (0x04), input_cnt (0x08), output_cnt (0x0C)
 
 ## Expected Results
 - **Throughput**: ~1 Sample/cycle at 200 MHz
@@ -137,14 +139,15 @@ After simulation:
 
 ## Modifications for Other Images
 
-To test with different images, modify constants in `sobel_processor_tb.vhd`:
+To test with different images, modify constants in the testbench files:
 
 ```vhdl
+-- In sobel_accelerator_tb.vhd or sobel_pipeline_tb.vhd
 -- For house_256_256
-constant ROWS    : positive := 256;
-constant COLUMNS : positive := 256;
-constant PIXELS  : positive := 65536;
-constant INPUT_FILE  : string := "../../data/raw/house_256_256_raw";
+constant IMG_WIDTH  : integer := 256;
+constant IMG_HEIGHT : integer := 256;
+constant TOTAL_PIXELS : integer := 65536;
+constant INPUT_FILE  : string := "house_256_256_raw";
 ```
 
 ## Performance Goals
