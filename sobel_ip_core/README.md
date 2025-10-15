@@ -1,16 +1,39 @@
-# Sobel Edge Detector IP Core
+# Sobel Edge Detector Accelerator IP Core
 
-Clean VHDL implementation of a Sobel edge detection accelerator IP core based on the architecture from YannosK/Sobel_Edge_Detector_on_Zynq7000_SoC.
+Clean VHDL implementation of a Sobel edge detection accelerator.
+The Sobel accelerator implements a pipelined edge detection algorithm using AXI4-Stream interfaces.
 
-## Architecture Overview
+### Data Flow Diagram
 
-The Sobel IP core implements a pipelined edge detection algorithm using AXI4-Stream interfaces.
+```
+┌────────────────────┐    ┌────────────────────┐    ┌────────────────────┐    ┌────────────────────┐    ┌────────────────────┐
+│ Input AXI-Stream   │ -> │ Input FIFO         │ -> │ sobel_processing_  │ -> │ Output FIFO        │ -> │ Output AXI-Stream  │
+│ (s_axis_*)         │    │ (CDC ext->int)     │    │ core               │    │ (CDC int->ext)     │    │ (m_axis_*)         │
+│ clk_ext            │    │                    │    │ clk_int            │    │                    │    │ clk_ext            │
+└────────────────────┘    └────────────────────┘    └────────────────────┘    └────────────────────┘    └────────────────────┘
+         │                           │                           │                           │                           │
+         └───────────────────────────┼───────────────────────────┼───────────────────────────┼───────────────────────────┘
+                                     │                           │                           │
+                                     v                           v                           v
+                                sobel_statistics          sobel_statistics          sobel_statistics
+                                (input_pixel_cnt)         (cycle_cnt)              (output_pixel_cnt)
+```
+
+**Detailed Pipeline Flow:**
+```
+sobel_processing_core:
+s_data/s_valid/s_last -> scaler -> window_buffer -> sobel_pipeline -> m_data/m_valid/m_last
+
+sobel_pipeline:
+kernel_application -> gradient_adder_tree -> manhattan_norm
+```
 
 ### Module Hierarchy
 
 ```
-sobel_processor
-├── top_level_module
+sobel_accelerator (top-level with FIFOs and statistics)
+├── Input FIFO (AXI4-Stream clock domain crossing)
+├── sobel_processing_core (processing pipeline)
 │   ├── scaler (optional preprocessing)
 │   ├── window_buffer (3x3 sliding window)
 │   └── sobel_pipeline
@@ -18,11 +41,9 @@ sobel_processor
 │       │   ├── derivative_1d (multiply by [-1, 0, +1])
 │       │   └── smoother_1d (multiply by [1, 2, 1])
 │       ├── gradient_adder_tree (sum Gx and Gy in adder tree)
-│       ├── gradient_magnitude (compute |Gx| and |Gy|)
-│       └── magnitude_adder (add and saturate to 8-bit)
-├── pixel_counter (input pixel counter)
-├── cycle_counter (cycle counter)
-└── pixel_counter (output pixel counter)
+│       └── manhattan_norm (compute |Gx| + |Gy|)
+├── Output FIFO (AXI4-Stream clock domain crossing)
+└── sobel_statistics (telemetry with clock domain crossing)
 ```
 
 ## File Descriptions
@@ -35,13 +56,11 @@ sobel_processor
 - **kernel_application.vhd**: Applies Gx and Gy Sobel kernels in parallel
 - **gradient_adder.vhd**: Handshaking 2-input adder
 - **gradient_adder_tree.vhd**: Hierarchical adder tree for Gx and Gy gradient summation
-- **gradient_magnitude.vhd**: Absolute value computation
-- **magnitude_adder.vhd**: Final addition with saturation
+- **manhattan_norm.vhd**: Computes |Gx| + |Gy| with saturation
 - **sobel_pipeline.vhd**: Complete Sobel pipeline
-- **pixel_counter.vhd**: Pixel counter with reset on frame end
-- **cycle_counter.vhd**: Cycle counter with enable control
-- **top_level_module.vhd**: Processing pipeline
-- **sobel_processor.vhd**: Top-level with counters and control
+- **sobel_processing_core.vhd**: Processing pipeline (scaler -> window_buffer -> sobel_pipeline)
+- **sobel_statistics.vhd**: Telemetry unit with counters and clock domain crossing
+- **sobel_accelerator.vhd**: Top-level with input/output FIFOs and statistics
 
 ## Interface Specifications
 
@@ -97,13 +116,13 @@ Result: `Edge = |Gx| + |Gy|`
 
 ## Generics
 
-- `rows`: Image height (default: 480)
-- `columns`: Image width (default: 640)
-- `pixels`: Total pixels (rows × columns, default: 307200)
+- `rows`: Image height (default: 512)
+- `columns`: Image width (default: 512)
+- `pixels`: Total pixels (rows × columns, default: 262144)
 
 ## Integration Notes
 
-This IP core is designed to integrate with:
+This accelerator is designed to integrate with:
 - AXI DMA for memory-mapped data transfer
 - AXI4-Lite registers for control/status
 - Processing System via AXI interconnect
