@@ -74,26 +74,26 @@ architecture Structural of gradient_adder_tree is
 begin
     ----------------------------------------------------------------------------
     -- Input mapping from kernel_outputs
-    ----------------------------------------------------------------------------
+    -- Input mapping from kernel_outputs
     -- Gx components (Sobel X direction)
-    Gx_00_sdata(0) <= s_data(0, 0);
-    Gx_00_sdata(1) <= s_data(0, 1);
+    Gx_00_sdata(0) <= std_logic_vector(resize(unsigned(s_data(0, 0)), gradient_width));
+    Gx_00_sdata(1) <= std_logic_vector(resize(unsigned(s_data(0, 1)), gradient_width));
     
-    Gx_01_sdata(0) <= s_data(0, 2);
-    Gx_01_sdata(1) <= s_data(0, 3);
+    Gx_01_sdata(0) <= std_logic_vector(resize(unsigned(s_data(0, 2)), gradient_width));
+    Gx_01_sdata(1) <= std_logic_vector(resize(unsigned(s_data(0, 3)), gradient_width));
     
-    Gx_02_sdata(0) <= s_data(0, 4);
-    Gx_02_sdata(1) <= s_data(0, 5);
+    Gx_02_sdata(0) <= std_logic_vector(resize(unsigned(s_data(0, 4)), gradient_width));
+    Gx_02_sdata(1) <= std_logic_vector(resize(unsigned(s_data(0, 5)), gradient_width));
 
     -- Gy components (Sobel Y direction)  
-    Gy_00_sdata(0) <= s_data(1, 0);
-    Gy_00_sdata(1) <= s_data(1, 1);
+    Gy_00_sdata(0) <= std_logic_vector(resize(unsigned(s_data(1, 0)), gradient_width));
+    Gy_00_sdata(1) <= std_logic_vector(resize(unsigned(s_data(1, 1)), gradient_width));
     
-    Gy_01_sdata(0) <= s_data(1, 2);
-    Gy_01_sdata(1) <= s_data(1, 3);
+    Gy_01_sdata(0) <= std_logic_vector(resize(unsigned(s_data(1, 2)), gradient_width));
+    Gy_01_sdata(1) <= std_logic_vector(resize(unsigned(s_data(1, 3)), gradient_width));
     
-    Gy_02_sdata(0) <= s_data(1, 4);
-    Gy_02_sdata(1) <= s_data(1, 5);
+    Gy_02_sdata(0) <= std_logic_vector(resize(unsigned(s_data(1, 4)), gradient_width));
+    Gy_02_sdata(1) <= std_logic_vector(resize(unsigned(s_data(1, 5)), gradient_width));
 
     ----------------------------------------------------------------------------
     -- Backpressure Propagation
