@@ -17,7 +17,7 @@ entity kernel_application is
         m_valid : out std_logic;
         m_ready : in std_logic;
         m_last  : out std_logic;
-        m_data  : out kernel_outputs
+        m_data  : out gradient_pair
     );
 end entity kernel_application;
 
@@ -25,8 +25,13 @@ architecture Behavioral of kernel_application is
     signal s_ready_int : std_logic := '0';
     signal m_valid_int : std_logic := '0';
     signal m_last_int  : std_logic := '0';
+    
 begin
     process(clk, rst_n)
+        variable p00, p01, p02 : signed(pixel_width-1 downto 0) := (others => '0');
+        variable p10, p11, p12 : signed(pixel_width-1 downto 0) := (others => '0');
+        variable p20, p21, p22 : signed(pixel_width-1 downto 0) := (others => '0');
+        variable gx_temp, gy_temp : signed(kernel_width-1 downto 0) := (others => '0');
     begin
         if rst_n = '0' then
             s_ready_int <= '0';
@@ -34,45 +39,44 @@ begin
             m_last_int  <= '0';
             -- Reset all output data
             for i in 0 to 1 loop
-                for j in 0 to 5 loop
-                    m_data(i, j) <= (others => '0');
-                end loop;
+                m_data(i) <= (others => '0');
             end loop;
+            
         elsif rising_edge(clk) then
             -- Handshake signals
             s_ready_int <= m_ready;
             m_valid_int <= s_valid;
             m_last_int  <= s_last;
             
-            -- Process data when ready
-            if m_ready = '1' then
-                -- X direction processing (Gx kernel)
-                -- First stage: derivative [-1, 0, +1] in X direction
-                m_data(0, 0) <= std_logic_vector(resize(signed(s_data(0, 0)), kernel_width));  -- +1*col0
-                m_data(0, 1) <= std_logic_vector(resize(signed(s_data(1, 0)), kernel_width));  -- +2*col1 (will be shifted)
-                m_data(0, 2) <= std_logic_vector(resize(signed(s_data(2, 0)), kernel_width));  -- +1*col2
-                m_data(0, 3) <= std_logic_vector(-resize(signed(s_data(0, 1)), kernel_width)); -- -1*col0
-                m_data(0, 4) <= std_logic_vector(-resize(signed(s_data(1, 1)), kernel_width)); -- -2*col1 (will be shifted)
-                m_data(0, 5) <= std_logic_vector(-resize(signed(s_data(2, 1)), kernel_width)); -- -1*col2
+            -- Process data when ready and valid
+            if m_ready = '1' and s_valid = '1' then
+                -- Convert pixel data to signed
+                p00 := signed(s_data(0, 0));
+                p01 := signed(s_data(0, 1));
+                p02 := signed(s_data(0, 2));
+                p10 := signed(s_data(1, 0));
+                p11 := signed(s_data(1, 1));
+                p12 := signed(s_data(1, 2));
+                p20 := signed(s_data(2, 0));
+                p21 := signed(s_data(2, 1));
+                p22 := signed(s_data(2, 2));
                 
-                -- Second stage: smoother [1, 2, 1] in Y direction
-                -- Apply smoothing by shifting middle elements
-                m_data(0, 1) <= std_logic_vector(shift_left(resize(signed(s_data(1, 0)), kernel_width), 1));
-                m_data(0, 4) <= std_logic_vector(-shift_left(resize(signed(s_data(1, 1)), kernel_width), 1));
+                -- Direct Gx calculation using Sobel kernel: [-1, 0, 1; -2, 0, 2; -1, 0, 1]
+                -- Gx = (p02 - p00) + 2*(p12 - p10) + (p22 - p20) -> Optimized: (p02 - p00 + p22 - p20) + 2*(p12 - p10)
+                gx_temp := resize(p02 - p00 + p22 - p20, kernel_width) + shift_left(resize(p12 - p10, kernel_width), 1);
                 
-                -- Y direction processing (Gy kernel)  
-                -- First stage: derivative [-1, 0, +1] in Y direction
-                m_data(1, 0) <= std_logic_vector(resize(signed(s_data(0, 0)), kernel_width));  -- +1*row0
-                m_data(1, 1) <= std_logic_vector(resize(signed(s_data(0, 1)), kernel_width));  -- +2*row1 (will be shifted)
-                m_data(1, 2) <= std_logic_vector(resize(signed(s_data(0, 2)), kernel_width));  -- +1*row2
-                m_data(1, 3) <= std_logic_vector(-resize(signed(s_data(1, 0)), kernel_width)); -- -1*row0
-                m_data(1, 4) <= std_logic_vector(-resize(signed(s_data(1, 1)), kernel_width)); -- -2*row1 (will be shifted)
-                m_data(1, 5) <= std_logic_vector(-resize(signed(s_data(1, 2)), kernel_width)); -- -1*row2
+                -- Direct Gy calculation using Sobel kernel: [-1, -2, -1; 0, 0, 0; 1, 2, 1]
+                -- Gy = (p20 - p00) + 2*(p21 - p01) + (p22 - p02) -> Optimized: (p20 - p00 + p22 - p02) + 2*(p21 - p01)
+                gy_temp := resize(p20 - p00 + p22 - p02, kernel_width) + shift_left(resize(p21 - p01, kernel_width), 1);
                 
-                -- Second stage: smoother [1, 2, 1] in X direction
-                -- Apply smoothing by shifting middle elements
-                m_data(1, 1) <= std_logic_vector(shift_left(resize(signed(s_data(0, 1)), kernel_width), 1));
-                m_data(1, 4) <= std_logic_vector(-shift_left(resize(signed(s_data(1, 1)), kernel_width), 1));
+                -- Store final Gx and Gy results in output array
+                m_data(0) <= std_logic_vector(resize(gx_temp, gradient_width)); -- Gx result in first position
+                m_data(1) <= std_logic_vector(resize(gy_temp, gradient_width)); -- Gy result in second position  
+                
+            elsif m_ready = '1' then -- Clear outputs when ready but no valid input
+                for i in 0 to 1 loop
+                    m_data(i) <= (others => '0');
+                end loop;
             end if;
         end if;
     end process;
