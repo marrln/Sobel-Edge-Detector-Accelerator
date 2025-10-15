@@ -17,9 +17,9 @@ entity sobel_pipeline is
         m_last  : out std_logic;
         m_data  : out std_logic_vector(pixel_width - 1 downto 0)
     );
-end entity sobel_pipeline;
+end sobel_pipeline;
 
-architecture Structural of sobel_pipeline is
+architecture structural of sobel_pipeline is
     component kernel_application is
         port (
             clk     : in std_logic;
@@ -92,4 +92,4 @@ begin
         s_last => gradient_last, s_data => gradient_data, m_valid => m_valid,
         m_ready => m_ready, m_last => m_last, m_data => m_data
     );
-end Structural;
+end structural;
