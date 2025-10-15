@@ -1,4 +1,4 @@
--- Complete Sobel edge detection pipeline
+-- Complete Sobel edge detection pipeline with unified Manhattan norm
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
@@ -15,7 +15,7 @@ entity sobel_pipeline is
         m_valid : out std_logic;
         m_ready : in std_logic;
         m_last  : out std_logic;
-        m_data  : out std_logic_vector(digits - 1 downto 0)
+        m_data  : out std_logic_vector(pixel_width - 1 downto 0)
     );
 end entity sobel_pipeline;
 
@@ -50,7 +50,7 @@ architecture Structural of sobel_pipeline is
         );
     end component gradient_adder_tree;
     
-    component gradient_magnitude is
+    component manhattan_norm is
         port (
             clk     : in std_logic;
             rst_n   : in std_logic;
@@ -61,39 +61,19 @@ architecture Structural of sobel_pipeline is
             m_valid : out std_logic;
             m_ready : in std_logic;
             m_last  : out std_logic;
-            m_data  : out gradient_pair
+            m_data  : out std_logic_vector(pixel_width - 1 downto 0)
         );
-    end component gradient_magnitude;
+    end component manhattan_norm;
     
-    component magnitude_adder is
-        port (
-            clk     : in std_logic;
-            rst_n   : in std_logic;
-            s_valid : in std_logic;
-            s_ready : out std_logic;
-            s_last  : in std_logic;
-            s_data  : in gradient_pair;
-            m_valid : out std_logic;
-            m_ready : in std_logic;
-            m_last  : out std_logic;
-            m_data  : out std_logic_vector(digits - 1 downto 0)
-        );
-    end component magnitude_adder;
+    signal kernel_valid : std_logic := '0';
+    signal kernel_ready : std_logic := '0';
+    signal kernel_last  : std_logic := '0';
+    signal kernel_data  : kernel_outputs := (others => (others => (others => '0')));
     
-    signal kernel_valid : std_logic;
-    signal kernel_ready : std_logic;
-    signal kernel_last  : std_logic;
-    signal kernel_data  : kernel_outputs;
-    
-    signal gradient_valid : std_logic;
-    signal gradient_ready : std_logic;
-    signal gradient_last  : std_logic;
-    signal gradient_data  : gradient_pair;
-    
-    signal abs_gradient_valid : std_logic;
-    signal abs_gradient_ready : std_logic;
-    signal abs_gradient_last  : std_logic;
-    signal abs_gradient_data  : gradient_pair;
+    signal gradient_valid : std_logic := '0';
+    signal gradient_ready : std_logic := '0';
+    signal gradient_last  : std_logic := '0';
+    signal gradient_data  : gradient_pair := (others => (others => '0'));
 begin
     Kernel_Conv_Stage : kernel_application port map (
         clk => clk, rst_n => rst_n, s_valid => s_valid, s_ready => s_ready,
@@ -107,15 +87,9 @@ begin
         m_ready => gradient_ready, m_last => gradient_last, m_data => gradient_data
     );
     
-    Gradient_Abs_Stage : gradient_magnitude port map (
+    Manhattan_Norm_Stage : manhattan_norm port map (
         clk => clk, rst_n => rst_n, s_valid => gradient_valid, s_ready => gradient_ready,
-        s_last => gradient_last, s_data => gradient_data, m_valid => abs_gradient_valid,
-        m_ready => abs_gradient_ready, m_last => abs_gradient_last, m_data => abs_gradient_data
-    );
-    
-    Magnitude_Combine_Stage : magnitude_adder port map (
-        clk => clk, rst_n => rst_n, s_valid => abs_gradient_valid, s_ready => abs_gradient_ready,
-        s_last => abs_gradient_last, s_data => abs_gradient_data, m_valid => m_valid,
+        s_last => gradient_last, s_data => gradient_data, m_valid => m_valid,
         m_ready => m_ready, m_last => m_last, m_data => m_data
     );
 end Structural;
