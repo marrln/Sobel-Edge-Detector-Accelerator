@@ -246,6 +246,10 @@ begin
             writeline(output_f, L);
             out_count := out_count + 1;
             
+            if out_count = TOTAL_OUTPUT_PIXELS then
+                exit;
+            end if;
+            
             if out_count mod 100000 = 0 then
                 report "Received pixel " & integer'image(out_count) & " = " & integer'image(output_val);
             end if;
@@ -255,6 +259,7 @@ begin
         report "OUTPUT COMPLETE: " & integer'image(out_count) & " pixels written.";
         output_done <= true;
         wait;
+
     end process;
 
     -------------------------------------------------------------------------- 
