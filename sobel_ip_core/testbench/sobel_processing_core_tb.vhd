@@ -239,16 +239,14 @@ begin
         wait for 100 us;  -- Wait for pipeline to start producing outputs
         wait until rising_edge(clk);
         
-        report "Starting output capture...";
-        loop
+        report "Starting output capture... Expecting " & integer'image(TOTAL_OUTPUT_PIXELS) & " pixels";
+        
+        -- Capture exactly the expected number of output pixels
+        while out_count < TOTAL_OUTPUT_PIXELS loop
             receive_pixel(m_data, m_valid, m_ready, m_last, output_val);
             write(L, output_val);
             writeline(output_f, L);
             out_count := out_count + 1;
-            
-            if out_count = TOTAL_OUTPUT_PIXELS then
-                exit;
-            end if;
             
             if out_count mod 100000 = 0 then
                 report "Received pixel " & integer'image(out_count) & " = " & integer'image(output_val);
