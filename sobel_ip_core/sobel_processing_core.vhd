@@ -60,7 +60,7 @@ architecture structural of sobel_processing_core is
         );
     end component;
 
-    component sobel_pipeline is
+    component kernel_application is
         port (
             clk     : in std_logic;
             rst_n   : in std_logic;
@@ -68,6 +68,21 @@ architecture structural of sobel_processing_core is
             s_ready : out std_logic;
             s_last  : in std_logic;
             s_data  : in pixel_window;
+            m_valid : out std_logic;
+            m_ready : in std_logic;
+            m_last  : out std_logic;
+            m_data  : out gradient_pair
+        );
+    end component;
+
+    component manhattan_norm is
+        port (
+            clk     : in std_logic;
+            rst_n   : in std_logic;
+            s_valid : in std_logic;
+            s_ready : out std_logic;
+            s_last  : in std_logic;
+            s_data  : in gradient_pair;
             m_valid : out std_logic;
             m_ready : in std_logic;
             m_last  : out std_logic;
@@ -82,9 +97,14 @@ architecture structural of sobel_processing_core is
     signal scaled_last  : std_logic := '0';
     
     signal window_data  : pixel_window := (others => (others => (others => '0')));
-    signal window_ready : std_logic := '0';
-    signal window_valid : std_logic := '0';
-    signal window_last  : std_logic := '0';
+    signal kernel_ready : std_logic := '0';
+    signal kernel_valid : std_logic := '0';
+    signal kernel_last  : std_logic := '0';
+    
+    signal kernel_data  : gradient_pair := (others => (others => '0'));
+    signal norm_ready   : std_logic := '0';
+    signal norm_valid   : std_logic := '0';
+    signal norm_last    : std_logic := '0';
     
 begin
     div4_scaler : scaler
@@ -102,15 +122,24 @@ begin
             clk => clk, rst_n => rst_n, 
             s_valid => scaled_valid, s_ready => scaled_ready,
             s_last => scaled_last, s_data => scaled_data, 
-            m_valid => window_valid, m_ready => window_ready, 
-            m_last => window_last, m_data => window_data
+            m_valid => kernel_valid, m_ready => kernel_ready, 
+            m_last => kernel_last, m_data => window_data
         );
     
-    sobel_pipeline_part : sobel_pipeline
+    kernel_convolution : kernel_application
         port map (
             clk => clk, rst_n => rst_n, 
-            s_valid => window_valid, s_ready => window_ready,
-            s_last => window_last, s_data => window_data, 
+            s_valid => kernel_valid, s_ready => kernel_ready,
+            s_last => kernel_last, s_data => window_data, 
+            m_valid => norm_valid, m_ready => norm_ready, 
+            m_last => norm_last, m_data => kernel_data
+        );
+    
+    magnitude_calculation : manhattan_norm
+        port map (
+            clk => clk, rst_n => rst_n, 
+            s_valid => norm_valid, s_ready => norm_ready,
+            s_last => norm_last, s_data => kernel_data, 
             m_valid => m_valid, m_ready => m_ready, 
             m_last => m_last, m_data => m_data
         );
