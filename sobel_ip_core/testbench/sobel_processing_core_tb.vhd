@@ -5,10 +5,10 @@ use STD.TEXTIO.ALL;
 use IEEE.STD_LOGIC_TEXTIO.ALL;
 use WORK.MY_TYPES.ALL;
 
-entity sobel_pipeline_tb is
-end sobel_pipeline_tb;
+entity sobel_processing_core_tb is
+end sobel_processing_core_tb;
 
-architecture behavioral of sobel_pipeline_tb is
+architecture behavioral of sobel_processing_core_tb is
 
     -------------------------------------------------------------------------- 
     -- Constants
@@ -269,4 +269,4 @@ begin
         wait;
     end process;
 
-end behavioral;
+end architecture behavioral;
