@@ -61,14 +61,20 @@ begin
                 p21 := signed(s_data(2, 1));
                 p22 := signed(s_data(2, 2));
                 
-                -- Direct Gx calculation using Sobel kernel: [-1, 0, 1; -2, 0, 2; -1, 0, 1]
-                -- Gx = (p02 - p00) + 2*(p12 - p10) + (p22 - p20) -> Optimized: (p02 - p00 + p22 - p20) + 2*(p12 - p10)
-                gx_temp := resize(p02 - p00 + p22 - p20, kernel_width) + shift_left(resize(p12 - p10, kernel_width), 1);
+                -- -- Direct Gx calculation using Sobel kernel: [-1, 0, 1; -2, 0, 2; -1, 0, 1]
+                -- -- Gx = (p02 - p00) + 2*(p12 - p10) + (p22 - p20) -> Optimized: (p02 - p00 + p22 - p20) + 2*(p12 - p10)
+                -- gx_temp := resize(p02 - p00 + p22 - p20, kernel_width) + shift_left(resize(p12 - p10, kernel_width), 1);
                 
-                -- Direct Gy calculation using Sobel kernel: [-1, -2, -1; 0, 0, 0; 1, 2, 1]
-                -- Gy = (p20 - p00) + 2*(p21 - p01) + (p22 - p02) -> Optimized: (p20 - p00 + p22 - p02) + 2*(p21 - p01)
-                gy_temp := resize(p20 - p00 + p22 - p02, kernel_width) + shift_left(resize(p21 - p01, kernel_width), 1);
+                -- -- Direct Gy calculation using Sobel kernel: [-1, -2, -1; 0, 0, 0; 1, 2, 1]
+                -- -- Gy = (p20 - p00) + 2*(p21 - p01) + (p22 - p02) -> Optimized: (p20 - p00 + p22 - p02) + 2*(p21 - p01)
+                -- gy_temp := resize(p20 - p00 + p22 - p02, kernel_width) + shift_left(resize(p21 - p01, kernel_width), 1);
                 
+                -- CORRECTED: Standard Sobel kernels (not flipped)
+                -- Gx = [-1, 0, 1; -2, 0, 2; -1, 0, 1]
+                -- Gy = [-1, -2, -1; 0, 0, 0; 1, 2, 1]
+                gx_temp := resize(p02 - p00 + 2*(p12 - p10) + p22 - p20, kernel_width);
+                gy_temp := resize(p20 - p00 + 2*(p21 - p01) + p22 - p02, kernel_width);
+
                 -- Store final Gx and Gy results in output array
                 m_data(0) <= std_logic_vector(resize(gx_temp, gradient_width)); -- Gx result in first position
                 m_data(1) <= std_logic_vector(resize(gy_temp, gradient_width)); -- Gy result in second position  
