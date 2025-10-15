@@ -47,6 +47,10 @@ architecture behavioral of window_buffer is
     signal s_last_d2     : std_logic := '0';
 begin
     -- Direct mapping of buffer outputs to pixel window
+    -- This maps to standard 3x3 spatial coordinates:
+    -- (0,0)=top-left, (0,1)=top-middle, (0,2)=top-right
+    -- (1,0)=middle-left, (1,1)=center, (1,2)=middle-right  
+    -- (2,0)=bottom-left, (2,1)=bottom-middle, (2,2)=bottom-right
     m_data(0, 0) <= buffer_out(0);
     m_data(0, 1) <= buffer_out(1);
     m_data(0, 2) <= buffer_out(2);
