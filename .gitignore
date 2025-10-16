@@ -3,7 +3,7 @@
 
 # vscode
 .vscode
-
+/sources
 # txt files
 *.txt
 
