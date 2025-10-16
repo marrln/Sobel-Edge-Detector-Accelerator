@@ -22,6 +22,7 @@ architecture behavioral of sobel_accelerator_tb is
     constant IMG_WIDTH  : integer := 512;
     constant IMG_HEIGHT : integer := 512;
     constant TOTAL_PIXELS : integer := IMG_WIDTH * IMG_HEIGHT;
+    constant OUTPUT_PIXELS : integer := (IMG_WIDTH - 2) * (IMG_HEIGHT - 2);
 
     -------------------------------------------------------------------------- 
     -- DUT component
@@ -65,96 +66,9 @@ architecture behavioral of sobel_accelerator_tb is
     signal all_done    : boolean := false;
 
 
-    --------------------------------------------------------------------------
-    -- AXI procedures
-    --------------------------------------------------------------------------
-    procedure send_pixel(
-        signal tdata     : out std_logic_vector(pixel_width - 1 downto 0);
-        signal tvalid    : out std_logic;
-        signal tlast     : out std_logic;
-        signal tready    : in  std_logic;
-        variable pixel_val        : in  std_logic_vector(pixel_width - 1 downto 0);
-        variable px_index         : in  integer;
-        constant IMG_WIDTH        : in  integer
-    ) is
-        variable wait_cycles : integer := 0;
-        constant MAX_WAIT_CYCLES : integer := 200000;
-    begin
-        -- Wait until ready is asserted before driving valid and data
-        wait_cycles := 0;
-        while tready /= '1' and wait_cycles < MAX_WAIT_CYCLES loop
-            wait until rising_edge(clk_ext);
-            wait_cycles := wait_cycles + 1;
-            if wait_cycles mod 1000 = 0 then
-                report "DEBUG: Waiting for tready before sending pixel " & integer'image(px_index) severity note;
-            end if;
-        end loop;
-        
-        if wait_cycles >= MAX_WAIT_CYCLES then
-            report "ERROR: Timeout waiting for initial tready for pixel " & integer'image(px_index) severity failure;
-            return;
-        end if;
 
-        -- Now that tready is '1', drive data and assert valid
-        tdata  <= pixel_val;
-        if ((px_index + 1) mod IMG_WIDTH) = 0 then
-            tlast <= '1';
-        else
-            tlast <= '0';
-        end if;
-        tvalid <= '1';
-
-        -- Wait for handshake completion
-        wait until rising_edge(clk_ext) and tready = '1';
-        
-        -- Deassert valid and tlast after successful transfer
-        tvalid <= '0';
-        tlast  <= '0';
-    end procedure;
-
-
-    procedure receive_pixel(
-        signal tdata  : in  std_logic_vector(pixel_width - 1 downto 0);
-        signal tvalid : in  std_logic;
-        signal tready : out std_logic;
-        signal tlast  : in  std_logic;
-        variable output_val : out integer
-    ) is
-        variable wait_cycles : integer := 0;
-        constant MAX_WAIT_CYCLES : integer := 200000;
-    begin
-        -- Assert ready and wait for valid data
-        tready <= '1';
-        
-        wait_cycles := 0;
-        while tvalid /= '1' and wait_cycles < MAX_WAIT_CYCLES loop
-            wait until rising_edge(clk_ext);
-            wait_cycles := wait_cycles + 1;
-            -- if wait_cycles mod 1000 = 0 then
-            --     report "DEBUG: Waiting for tvalid for output pixel" severity note;
-            -- end if;
-        end loop;
-        
-        if wait_cycles >= MAX_WAIT_CYCLES then
-            report "ERROR: Timeout waiting for tvalid for output pixel" severity failure;
-            tready <= '0';
-            return;
-        end if;
-
-        -- Capture data on successful handshake
-        output_val := to_integer(unsigned(tdata));
-        
-        -- Wait one cycle then deassert ready if needed
-        wait until rising_edge(clk_ext);
-        tready <= '0';
-    end procedure;
-    
 
 begin
-
-    --------------------------------------------------------------------------
-    -- Clock generation
-    --------------------------------------------------------------------------
     clk_int_proc: process
     begin
         while not all_done loop
@@ -241,15 +155,19 @@ begin
             read(L, pix);
             pixel_val := std_logic_vector(to_unsigned(pix, pixel_width));
 
-            send_pixel(s_axis_tdata, s_axis_tvalid, s_axis_tlast, s_axis_tready, pixel_val, px_count, IMG_WIDTH);
-
-            px_count := px_count + 1;
-            if px_count <= 10 or px_count mod 10000 = 0 then
-                report "Sent pixel " & integer'image(px_count) & " = " & integer'image(pix) & 
-                       ", tready=" & std_logic'image(s_axis_tready);
+            s_axis_tdata <= pixel_val;
+            s_axis_tvalid <= '1';
+            if s_axis_tready = '1' then
+                px_count := px_count + 1;
+                if px_count <= 10 or px_count mod 10000 = 0 then
+                    report "Sent pixel " & integer'image(px_count) & " = " & integer'image(pix) & 
+                           ", tready=" & std_logic'image(s_axis_tready);
+                end if;
             end if;
+            wait until rising_edge(clk_ext);
         end loop;
 
+        s_axis_tvalid <= '0';
         file_close(input_f);
         report "INPUT COMPLETE: " & integer'image(px_count) & " pixels sent.";
         input_done <= true;
@@ -263,26 +181,33 @@ begin
         file output_f : text open write_mode is OUTPUT_FILE;
         variable L : line;
         variable out_count : integer := 0;
-        variable output_val : integer;
+        variable pixel_val : std_logic_vector(pixel_width - 1 downto 0);
     begin
+        m_axis_tready <= '1';  -- Always ready to receive
+
+        -- Wait for reset and enable to be stable
         wait until rst_n = '1' and en = '1';
-        wait for 1000 ns;  -- Wait for first outputs
+        wait for 500 ns;  -- Additional wait for DUT to initialize
         wait until rising_edge(clk_ext);
-        
-        report "Starting output capture...";
-        while out_count < TOTAL_PIXELS loop
-            receive_pixel(m_axis_tdata, m_axis_tvalid, m_axis_tready, m_axis_tlast, output_val);
-            write(L, output_val);
-            writeline(output_f, L);
-            out_count := out_count + 1;
-            
-            if out_count <= 10 or out_count mod 10000 = 0 then
-                report "Received pixel " & integer'image(out_count) & " = " & integer'image(output_val);
+
+        report "Waiting for output...";
+
+        while out_count < OUTPUT_PIXELS loop
+            if m_axis_tvalid = '1' then
+                pixel_val := m_axis_tdata;
+                write(L, to_integer(unsigned(pixel_val)));
+                writeline(output_f, L);
+                out_count := out_count + 1;
+                if out_count <= 10 or out_count mod 10000 = 0 then
+                    report "Received pixel " & integer'image(out_count) & " = " & integer'image(to_integer(unsigned(pixel_val))) & 
+                           ", tvalid=" & std_logic'image(m_axis_tvalid);
+                end if;
             end if;
+            wait until rising_edge(clk_ext);
         end loop;
 
         file_close(output_f);
-        report "OUTPUT COMPLETE: " & integer'image(out_count) & " pixels written.";
+        report "OUTPUT COMPLETE: " & integer'image(out_count) & " pixels received.";
         output_done <= true;
         wait;
     end process;
