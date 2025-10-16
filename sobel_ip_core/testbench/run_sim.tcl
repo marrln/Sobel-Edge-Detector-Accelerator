@@ -1,13 +1,15 @@
 # Simulation script for Sobel Processor Testbench
 # Vivado 2022.2 compatible
-# Usage: vivado -mode batch -source run_sim.tcl
+# Usage: vivado -mode batch -source run_sim.tcl or run via .bat files
 
+# Get testbench name from command line argument or default
 set tb_name "sobel_accelerator_tb"
 if {[llength $::argv] > 0} {
     set tb_name [lindex $::argv 0]
 }
 
-# Create project in a simple path
+# Create project in a temp path (C:/temp)
+# Ensure the directory is writable and clean
 set project_name "sobel_tb"
 set project_dir "C:/temp/sobel_sim"
 set work_dir "C:/temp/sobel_work"
@@ -28,7 +30,7 @@ puts "========================================="
 puts "Setting up project..."
 puts "========================================="
 
-# All source files 
+# All source files for Vivada project
 set source_files [list \
     "kernel_application.vhd" \
     "manhattan_norm.vhd" \
