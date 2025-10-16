@@ -12,7 +12,7 @@ There are also scripts to run the simulations easily in Vivado 2022.2.
 
 For Windows users:
 - `run_sim_accelerator.bat` - Windows batch file for accelerator testbench
-- `run_sim_accelerator.bat` - Dedicated accelerator testbench runner
+- `run_sim_processing_core.bat` - Windows batch file for processing core testbench
 
 ## Test Configuration
 - **Vivado Version**: 2022.2
@@ -29,16 +29,15 @@ For Windows users:
 **Windows - Easy Method:**
 ```cmd
 cd sobel_ip_core\testbench
-run_sim.bat          # Runs accelerator testbench
-run_sim_accelerator.bat  # Same as above
-run_sim_pipeline.bat     # Runs pipeline testbench
+run_sim_accelerator.bat    # Runs accelerator testbench
+run_sim_processing_core.bat # Runs processing core testbench
 ```
 
 **Command Line:**
 ```bash
 cd sobel_ip_core/testbench
 vivado -mode batch -source run_sim.tcl                             # Accelerator
-vivado -mode batch -source run_sim.tcl -tclargs sobel_pipeline_tb  # Pipeline
+vivado -mode batch -source run_sim.tcl -tclargs sobel_processing_core_tb  # Processing core
 ```
 
 ### Manual Compilation
@@ -49,18 +48,15 @@ vcom -2008 ../scaler.vhd
 vcom -2008 ../window_buffer.vhd
 vcom -2008 ../kernel_application.vhd
 vcom -2008 ../manhattan_norm.vhd
-vcom -2008 ../gradient_adder.vhd
-vcom -2008 ../gradient_adder_tree.vhd
-vcom -2008 ../sobel_pipeline.vhd
 vcom -2008 ../sobel_processing_core.vhd
 vcom -2008 ../sobel_statistics.vhd
 vcom -2008 ../sobel_accelerator.vhd
 
 # Compile testbench
-vcom -2008 sobel_accelerator_tb.vhd  # or sobel_pipeline_tb.vhd
+vcom -2008 sobel_accelerator_tb.vhd  # or sobel_processing_core_tb.vhd
 
 # Simulate
-vsim work.sobel_accelerator_tb  # or work.sobel_pipeline_tb
+vsim work.sobel_accelerator_tb  # or work.sobel_processing_core_tb
 run -all
 ```
 
@@ -79,8 +75,8 @@ Both testbenches perform similar operations:
 - Uses external clock (100 MHz) for I/O, internal (200 MHz) for processing
 - Includes telemetry outputs
 
-**Pipeline Testbench** (`sobel_pipeline_tb`):
-- Tests processing core only (scaler → window_buffer → sobel_pipeline)
+**Processing Core Testbench** (`sobel_processing_core_tb`):
+- Tests processing core only (scaler → window_buffer → kernel_application → manhattan_norm)
 - Single clock domain
 - Simpler for debugging pipeline logic
 
@@ -142,7 +138,7 @@ After simulation:
 To test with different images, modify constants in the testbench files:
 
 ```vhdl
--- In sobel_accelerator_tb.vhd or sobel_pipeline_tb.vhd
+-- In sobel_accelerator_tb.vhd or sobel_processing_core_tb.vhd
 -- For house_256_256
 constant IMG_WIDTH  : integer := 256;
 constant IMG_HEIGHT : integer := 256;
