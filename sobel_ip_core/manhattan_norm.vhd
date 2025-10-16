@@ -23,23 +23,20 @@ architecture Behavioral of manhattan_norm is
     signal abs_gy   : unsigned(gradient_width - 1 downto 0);
     signal sum_temp : unsigned(gradient_width downto 0);  -- one extra bit for carry
 begin
+    -- AXI handshake passthrough
+    s_ready <= m_ready;
+    m_valid <= s_valid;
+    m_last  <= s_last;
+
     process(clk, rst_n)
     begin
         if rst_n = '0' then
-            s_ready  <= '0';
-            m_valid  <= '0';
-            m_last   <= '0';
             m_data   <= (others => '0');
             abs_gx   <= (others => '0');
             abs_gy   <= (others => '0');
             sum_temp <= (others => '0');
 
         elsif rising_edge(clk) then
-            -- AXI handshake passthrough
-            s_ready <= m_ready;
-            m_valid <= s_valid;
-            m_last  <= s_last;
-
             if m_ready = '1' then
                 -- Compute absolute values using abs()
                 abs_gx <= unsigned(abs(signed(s_data(0))));
