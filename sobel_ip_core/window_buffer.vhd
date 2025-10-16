@@ -34,11 +34,10 @@ architecture behavioral of window_buffer is
     signal kernel_buffer : ram_t := (others => (others => '0'));
     
     -- Index mapping for 3x3 window positions in the buffer
-    -- Assuming pixel_window is 3x3 array (0 to 2, 0 to 2)
     -- Mapping positions relative to newest pixel at index 0:
     -- [2*columns+2] [2*columns+1] [2*columns]   -- Top row (oldest)
     -- [columns+2]   [columns+1]   [columns]     -- Middle row  
-    -- [2]          [1]          [0]            -- Bottom row (newest)
+    -- [2]           [1]           [0]           -- Bottom row (newest)
     
     -- Function to convert 2D window coordinates to buffer indexes
     function get_window_indexes(columns : integer) return pixel_window_indexes is
@@ -67,6 +66,8 @@ architecture behavioral of window_buffer is
     -- Internal signals
     signal internal_valid : std_logic := '0';
     signal internal_last  : std_logic := '0';
+    signal pixel_count : integer := 0;
+    signal can_output : std_logic := '0';
     
 begin
     
@@ -84,6 +85,8 @@ begin
             internal_last  <= '0';
             kernel_buffer <= (others => (others => '0'));
             m_data <= (others => (others => (others => '0')));
+            pixel_count <= 0;
+            can_output <= '0';
             
         elsif rising_edge(clk) then
             -- Default values
@@ -100,16 +103,26 @@ begin
                 -- Insert new pixel at the beginning (newest position)
                 kernel_buffer(0) <= s_data;
                 
-                -- Output the 3x3 window
-                for i in 0 to 2 loop
-                    for j in 0 to 2 loop
-                        m_data(i, j) <= kernel_buffer(window_indexes(i, j));
-                    end loop;
-                end loop;
+                -- Increment pixel count
+                pixel_count <= pixel_count + 1;
                 
-                -- Pass through control signals
-                internal_valid <= '1';
-                internal_last  <= s_last;
+                -- Check if we have enough data for first valid window
+                if pixel_count >= (2 * columns + 2) then
+                    can_output <= '1';
+                end if;
+                
+                -- Output the 3x3 window only when buffer is ready
+                if can_output = '1' then
+                    for i in 0 to 2 loop
+                        for j in 0 to 2 loop
+                            m_data(i, j) <= kernel_buffer(window_indexes(i, j));
+                        end loop;
+                    end loop;
+                    
+                    -- Pass through control signals
+                    internal_valid <= '1';
+                    internal_last  <= s_last;
+                end if;
                 
             end if;
         end if;
