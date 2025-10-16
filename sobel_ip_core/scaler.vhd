@@ -34,6 +34,7 @@ begin
         elsif rising_edge(clk) then
             -- Register new data when we accept input
             if s_valid = '1' and ready_int = '1' then
+                -- NOTE: Uncomment one of the following lines to apply scaling, scaling makes the image darker
                 -- data_reg  <= std_logic_vector(shift_right(unsigned(s_data), 2)); -- Divide by 4
                 -- data_reg  <= std_logic_vector(shift_right(unsigned(s_data), 1)); -- Divide by 2
                 data_reg  <= s_data;  -- No scaling
