@@ -92,17 +92,17 @@ architecture structural of sobel_processing_core is
 
     -- Inter-stage signals between pipeline components
     signal scaled_data  : std_logic_vector(pixel_width - 1 downto 0) := (others => '0');
-    signal scaled_ready : std_logic := '0';
+    signal scaled_ready : std_logic := '1'; -- ready to accept data
     signal scaled_valid : std_logic := '0';
     signal scaled_last  : std_logic := '0';
     
     signal window_data  : pixel_window := (others => (others => (others => '0')));
-    signal kernel_ready : std_logic := '0';
+    signal kernel_ready : std_logic := '1'; -- ready to accept data
     signal kernel_valid : std_logic := '0';
     signal kernel_last  : std_logic := '0';
     
     signal kernel_data  : gradient_pair := (others => (others => '0'));
-    signal norm_ready   : std_logic := '0';
+    signal norm_ready   : std_logic := '1'; -- ready to accept data
     signal norm_valid   : std_logic := '0';
     signal norm_last    : std_logic := '0';
     
