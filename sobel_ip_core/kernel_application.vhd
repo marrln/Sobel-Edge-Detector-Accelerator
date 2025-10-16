@@ -1,6 +1,3 @@
--- Unified Sobel kernel application
--- Applies Sobel Gx and Gy kernels to pixel window in a single entity
-
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
@@ -22,11 +19,19 @@ entity kernel_application is
 end entity kernel_application;
 
 architecture Behavioral of kernel_application is
-    signal s_ready_int : std_logic := '0';
-    signal m_valid_int : std_logic := '0';
-    signal m_last_int  : std_logic := '0';
+    -- Internal registered signals
+    signal input_data_reg  : pixel_window := (others => (others => (others => '0')));
+    signal input_last_reg  : std_logic := '0';
+    signal input_valid_reg : std_logic := '0';
+    
+    signal output_data_reg : gradient_pair := (others => (others => '0'));
+    signal output_last_reg : std_logic := '0';
+    signal output_valid_reg : std_logic := '0';
     
 begin
+    -- Flow control: ready when we can accept new data
+    s_ready <= m_ready or not output_valid_reg;
+
     process(clk, rst_n)
         variable p00, p01, p02 : signed(pixel_width-1 downto 0) := (others => '0');
         variable p10, p11, p12 : signed(pixel_width-1 downto 0) := (others => '0');
@@ -34,22 +39,33 @@ begin
         variable gx_temp, gy_temp : signed(kernel_width-1 downto 0) := (others => '0');
     begin
         if rst_n = '0' then
-            s_ready_int <= '0';
-            m_valid_int <= '0';
-            m_last_int  <= '0';
-            -- Reset all output data
-            for i in 0 to 1 loop
-                m_data(i) <= (others => '0');
-            end loop;
+            -- Reset all registers
+            input_data_reg <= (others => (others => (others => '0')));
+            input_valid_reg <= '0';
+            input_last_reg <= '0';
+            output_data_reg <= (others => (others => '0'));
+            output_valid_reg <= '0';
+            output_last_reg <= '0';
             
         elsif rising_edge(clk) then
-            -- Handshake signals
-            s_ready_int <= m_ready;
-            m_valid_int <= s_valid;
-            m_last_int  <= s_last;
+            -- Default: maintain output unless updated
+            output_valid_reg <= output_valid_reg;
+            output_last_reg <= output_last_reg;
             
-            -- Process data when ready and valid
-            if m_ready = '1' and s_valid = '1' then
+            -- When downstream is ready and we have valid output, clear output
+            if m_ready = '1' and output_valid_reg = '1' then
+                output_valid_reg <= '0';
+                output_last_reg <= '0';
+            end if;
+            
+            -- Accept new input data when ready
+            if s_ready = '1' and s_valid = '1' then
+                -- Register input data and control signals
+                input_data_reg <= s_data;
+                input_valid_reg <= '1';
+                input_last_reg <= s_last;
+                
+                -- Perform Sobel computation
                 -- Convert pixel data to signed
                 p00 := signed(s_data(0, 0));
                 p01 := signed(s_data(0, 1));
@@ -61,35 +77,31 @@ begin
                 p21 := signed(s_data(2, 1));
                 p22 := signed(s_data(2, 2));
                 
-                -- -- Direct Gx calculation using Sobel kernel: [-1, 0, 1; -2, 0, 2; -1, 0, 1]
-                -- -- Gx = (p02 - p00) + 2*(p12 - p10) + (p22 - p20) -> Optimized: (p02 - p00 + p22 - p20) + 2*(p12 - p10)
-                -- gx_temp := resize(p02 - p00 + p22 - p20, kernel_width) + shift_left(resize(p12 - p10, kernel_width), 1);
-                
-                -- -- Direct Gy calculation using Sobel kernel: [-1, -2, -1; 0, 0, 0; 1, 2, 1]
-                -- -- Gy = (p20 - p00) + 2*(p21 - p01) + (p22 - p02) -> Optimized: (p20 - p00 + p22 - p02) + 2*(p21 - p01)
-                -- gy_temp := resize(p20 - p00 + p22 - p02, kernel_width) + shift_left(resize(p21 - p01, kernel_width), 1);
-                
-                -- CORRECTED: Standard Sobel kernels (not flipped)
-                -- Gx = [-1, 0, 1; -2, 0, 2; -1, 0, 1]
-                -- Gy = [-1, -2, -1; 0, 0, 0; 1, 2, 1] TODO: TRY DIFFERRENT SIGNS
+                -- Sobel Gx kernel: [-1, 0, 1; -2, 0, 2; -1, 0, 1]
                 gx_temp := resize(p02 - p00 + 2*(p12 - p10) + p22 - p20, kernel_width);
-                gy_temp := resize(p20 - p00 + 2*(p21 - p01) + p22 - p02, kernel_width);
-
-                -- Store final Gx and Gy results in output array
-                m_data(0) <= std_logic_vector(resize(gx_temp, gradient_width)); -- Gx result in first position
-                m_data(1) <= std_logic_vector(resize(gy_temp, gradient_width)); -- Gy result in second position  
                 
-            elsif m_ready = '1' then -- Clear outputs when ready but no valid input
-                for i in 0 to 1 loop
-                    m_data(i) <= (others => '0');
-                end loop;
+                -- -- Sobel Gy kernel: [-1, -2, -1; 0, 0, 0; 1, 2, 1]
+                -- gy_temp := resize(p20 - p00 + 2*(p21 - p01) + p22 - p02, kernel_width);
+                -- Sobel Gy kernel: [1, 2, 1; 0, 0, 0; -1, -2, -1] (signs reversed)
+                gy_temp := resize(p00 - p20 + 2*(p01 - p21) + p02 - p22, kernel_width);
+                
+                -- Register output results
+                output_data_reg(0) <= std_logic_vector(resize(gx_temp, gradient_width)); -- Gx
+                output_data_reg(1) <= std_logic_vector(resize(gy_temp, gradient_width)); -- Gy
+                output_valid_reg <= '1';
+                output_last_reg <= s_last;
+                
+            elsif s_ready = '1' then
+                -- No valid input, clear input registers
+                input_valid_reg <= '0';
+                input_last_reg <= '0';
             end if;
         end if;
     end process;
     
-    -- Connect internal signals to outputs
-    s_ready <= s_ready_int;
-    m_valid <= m_valid_int;
-    m_last  <= m_last_int;
+    -- Connect outputs
+    m_valid <= output_valid_reg;
+    m_last  <= output_last_reg;
+    m_data  <= output_data_reg;
     
 end Behavioral;
