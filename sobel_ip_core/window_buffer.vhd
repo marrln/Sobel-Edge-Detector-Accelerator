@@ -77,7 +77,6 @@ begin
     s_ready <= m_ready;  -- Flow control: ready when downstream is ready
     
     process(clk, rst_n)
-        variable temp_buffer : ram_t;
     begin
         if rst_n = '0' then
             -- Reset all signals and buffer
@@ -104,26 +103,20 @@ begin
                 kernel_buffer(0) <= s_data;
                 
                 -- Increment pixel count
-                pixel_count <= pixel_count + 1;
-                
-                -- Check if we have enough data for first valid window
-                if pixel_count >= (2 * columns + 2) then
-                    can_output <= '1';
+                if pixel_count < BUFFER_SIZE then
+                    pixel_count <= pixel_count + 1;
                 end if;
                 
-                -- Output the 3x3 window only when buffer is ready
-                if can_output = '1' then
+                -- Output only after buffer full
+                if pixel_count >= BUFFER_SIZE - 1 then  -- Buffer now has valid history
                     for i in 0 to 2 loop
                         for j in 0 to 2 loop
                             m_data(i, j) <= kernel_buffer(window_indexes(i, j));
                         end loop;
                     end loop;
-                    
-                    -- Pass through control signals
                     internal_valid <= '1';
                     internal_last  <= s_last;
                 end if;
-                
             end if;
         end if;
     end process;
