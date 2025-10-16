@@ -22,10 +22,7 @@ The Sobel accelerator implements a pipelined edge detection algorithm using AXI4
 **Detailed Pipeline Flow:**
 ```
 sobel_processing_core:
-s_data/s_valid/s_last -> scaler -> window_buffer -> sobel_pipeline -> m_data/m_valid/m_last
-
-sobel_pipeline:
-kernel_application -> gradient_adder_tree -> manhattan_norm
+s_data/s_valid/s_last -> scaler -> window_buffer -> kernel_application -> manhattan_norm -> m_data/m_valid/m_last
 ```
 
 ### Module Hierarchy
@@ -36,12 +33,8 @@ sobel_accelerator (top-level with FIFOs and statistics)
 ├── sobel_processing_core (processing pipeline)
 │   ├── scaler (optional preprocessing)
 │   ├── window_buffer (3x3 sliding window)
-│   └── sobel_pipeline
-│       ├── kernel_application (Gx and Gy convolution)
-│       │   ├── derivative_1d (multiply by [-1, 0, +1])
-│       │   └── smoother_1d (multiply by [1, 2, 1])
-│       ├── gradient_adder_tree (sum Gx and Gy in adder tree)
-│       └── manhattan_norm (compute |Gx| + |Gy|)
+│   ├── kernel_application (Gx and Gy convolution)
+│   └── manhattan_norm (compute |Gx| + |Gy|)
 ├── Output FIFO (AXI4-Stream clock domain crossing)
 └── sobel_statistics (telemetry with clock domain crossing)
 ```
@@ -51,14 +44,9 @@ sobel_accelerator (top-level with FIFOs and statistics)
 - **my_types.vhd**: Type definitions for pixel windows and data arrays
 - **scaler.vhd**: Optional input scaling stage
 - **window_buffer.vhd**: Line buffer creating 3x3 pixel windows
-- **derivative_1d.vhd**: First convolution stage ([-1, 0, +1] weights)
-- **smoother_1d.vhd**: Second convolution stage ([1, 2, 1] weights)
-- **kernel_application.vhd**: Applies Gx and Gy Sobel kernels in parallel
-- **gradient_adder.vhd**: Handshaking 2-input adder
-- **gradient_adder_tree.vhd**: Hierarchical adder tree for Gx and Gy gradient summation
+- **kernel_application.vhd**: Applies Gx and Gy Sobel kernels to compute gradients
 - **manhattan_norm.vhd**: Computes |Gx| + |Gy| with saturation
-- **sobel_pipeline.vhd**: Complete Sobel pipeline
-- **sobel_processing_core.vhd**: Processing pipeline (scaler -> window_buffer -> sobel_pipeline)
+- **sobel_processing_core.vhd**: Processing pipeline (scaler -> window_buffer -> kernel_application -> manhattan_norm)
 - **sobel_statistics.vhd**: Telemetry unit with counters and clock domain crossing
 - **sobel_accelerator.vhd**: Top-level with input/output FIFOs and statistics
 
