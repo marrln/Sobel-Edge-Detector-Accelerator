@@ -88,8 +88,8 @@ begin
 
             if s_valid = '1' and m_ready = '1' then -- When both valid data and ready to transfer
                 
-                for i in BUFFER_SIZE - 1 downto 1 loop
-                    kernel_buffer(i) <= kernel_buffer(i - 1); -- Shift buffer: move all elements one position forward
+                for i in 0 to BUFFER_SIZE - 2 loop
+                    kernel_buffer(i + 1) <= kernel_buffer(i); -- Shift buffer: move all elements one position forward
                 end loop;
                 
                 kernel_buffer(0) <= s_data; -- Insert new pixel at the beginning (newest position)
@@ -98,6 +98,7 @@ begin
                     pixel_count <= pixel_count + 1;
                 end if;
                 
+                -- Update output only when buffer is full for the first time and every cycle thereafter
                 if pixel_count >= BUFFER_SIZE - 1 then -- Output only after buffer full
                     for i in 0 to 2 loop
                         for j in 0 to 2 loop
@@ -108,6 +109,8 @@ begin
                     internal_last  <= s_last;
                 end if;
             end if;
+        else 
+            kernel_buffer <= kernel_buffer; -- Hold state
         end if;
     end process;
 
