@@ -70,16 +70,10 @@ architecture behavioral of window_buffer is
     signal can_output : std_logic := '0';
     
 begin
-    
-    -- Connect internal signals to outputs
-    m_valid <= internal_valid;
-    m_last  <= internal_last;
-    s_ready <= m_ready;  -- Flow control: ready when downstream is ready
-    
     process(clk, rst_n)
     begin
         if rst_n = '0' then
-            -- Reset all signals and buffer
+
             internal_valid <= '0';
             internal_last  <= '0';
             kernel_buffer <= (others => (others => '0'));
@@ -88,30 +82,26 @@ begin
             can_output <= '0';
             
         elsif rising_edge(clk) then
-            -- Default values
+
             internal_valid <= '0';
             internal_last  <= '0';
-            
-            -- When both valid data and ready to transfer
-            if s_valid = '1' and m_ready = '1' then
-                -- Shift buffer: move all elements one position forward
+
+            if s_valid = '1' and m_ready = '1' then -- When both valid data and ready to transfer
+                
                 for i in BUFFER_SIZE - 1 downto 1 loop
-                    kernel_buffer(i) <= kernel_buffer(i - 1);
+                    kernel_buffer(i) <= kernel_buffer(i - 1); -- Shift buffer: move all elements one position forward
                 end loop;
                 
-                -- Insert new pixel at the beginning (newest position)
-                kernel_buffer(0) <= s_data;
+                kernel_buffer(0) <= s_data; -- Insert new pixel at the beginning (newest position)
                 
-                -- Increment pixel count
                 if pixel_count < BUFFER_SIZE then
                     pixel_count <= pixel_count + 1;
                 end if;
                 
-                -- Output only after buffer full
-                if pixel_count >= BUFFER_SIZE - 1 then  -- Buffer now has valid history
+                if pixel_count >= BUFFER_SIZE - 1 then -- Output only after buffer full
                     for i in 0 to 2 loop
                         for j in 0 to 2 loop
-                            m_data(i, j) <= kernel_buffer(window_indexes(i, j));
+                            m_data(i, j) <= kernel_buffer(window_indexes(i, j)); -- Map buffer to 3x3 window
                         end loop;
                     end loop;
                     internal_valid <= '1';
@@ -120,5 +110,10 @@ begin
             end if;
         end if;
     end process;
+
+    -- Output assignments
+    m_valid <= internal_valid;
+    m_last  <= internal_last;
+    s_ready <= m_ready;  -- Flow control: ready when downstream is ready
 
 end architecture behavioral;
