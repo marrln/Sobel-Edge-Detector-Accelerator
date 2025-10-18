@@ -1,3 +1,8 @@
+-- This module computes the Manhattan norm (L1 norm) of the gradient pair
+-- produced by the Sobel operator. It takes the absolute values of the Gx and Gy
+-- gradients, sums them, and outputs the result as an 8-bit pixel value.
+-- If the sum exceeds 255, it is saturated to 255 to fit in the pixel range.
+
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
