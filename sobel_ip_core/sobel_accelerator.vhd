@@ -8,7 +8,7 @@ entity sobel_accelerator is
     generic (
         rows       : positive := 512;
         columns    : positive := 512;
-        pixels     : positive := rows * columns;
+        pixels     : positive := 512 * 512;
         fifo_depth : positive := 512
     );
     port (
@@ -53,6 +53,11 @@ architecture structural of sobel_accelerator is
     signal m_data_from_filter   : std_logic_vector(pixel_width - 1 downto 0) := (others => '0');
     signal m_last_from_filter   : std_logic := '0';
 
+    -- Internal signals for output ports
+    signal s_axis_tready_int : std_logic := '0';
+    signal m_axis_tvalid_int : std_logic := '0';
+    signal m_axis_tlast_int  : std_logic := '0';
+
     component fifo is
         port (
             s_axis_aclk    : in  std_logic;
@@ -73,7 +78,7 @@ architecture structural of sobel_accelerator is
         generic (
             rows    : positive := 512;
             columns : positive := 512;
-            pixels  : positive := rows * columns
+            pixels  : positive := 512 * 512
         );
         port (
             clk     : in std_logic;
@@ -98,13 +103,13 @@ architecture structural of sobel_accelerator is
             
             -- Input interface monitoring (clk_ext domain)
             s_axis_tvalid    : in std_logic;
-            s_axis_tready    : in std_logic;
+            s_axis_tready    : in std_logic;  
             s_axis_tlast     : in std_logic;
             
             -- Output interface monitoring (clk_ext domain)  
-            m_axis_tvalid    : in std_logic;
+            m_axis_tvalid    : in std_logic;  
             m_axis_tready    : in std_logic;
-            m_axis_tlast     : in std_logic;
+            m_axis_tlast     : in std_logic; 
             
             -- Internal processing monitoring (clk_int domain)
             proc_s_valid     : in std_logic;
@@ -120,6 +125,11 @@ architecture structural of sobel_accelerator is
 begin
     sobel_rst_n <= rst_n and en;
 
+    -- Connect internal signals to output ports
+    s_axis_tready <= s_axis_tready_int;
+    m_axis_tvalid <= m_axis_tvalid_int;
+    m_axis_tlast  <= m_axis_tlast_int;
+
     ------------------------------------------------------------------
     -- Input FIFO (External ? Internal clock domain crossing)
     ------------------------------------------------------------------
@@ -128,7 +138,7 @@ begin
             s_axis_aclk    => clk_ext,
             s_axis_aresetn => sobel_rst_n,
             s_axis_tvalid  => s_axis_tvalid,
-            s_axis_tready  => s_axis_tready,
+            s_axis_tready  => s_axis_tready_int, 
             s_axis_tdata   => s_axis_tdata,
             s_axis_tlast   => s_axis_tlast,
             m_axis_aclk    => clk_int,
@@ -172,10 +182,10 @@ begin
             s_axis_tdata   => m_data_from_filter,
             s_axis_tlast   => m_last_from_filter,
             m_axis_aclk    => clk_ext,
-            m_axis_tvalid  => m_axis_tvalid,
+            m_axis_tvalid  => m_axis_tvalid_int, 
             m_axis_tready  => m_axis_tready,
             m_axis_tdata   => m_axis_tdata,
-            m_axis_tlast   => m_axis_tlast
+            m_axis_tlast   => m_axis_tlast_int   
         );
 
     ------------------------------------------------------------------
@@ -187,11 +197,11 @@ begin
             clk_int          => clk_int,
             rst_n            => sobel_rst_n,
             s_axis_tvalid    => s_axis_tvalid,
-            s_axis_tready    => s_axis_tready,
+            s_axis_tready    => s_axis_tready_int, 
             s_axis_tlast     => s_axis_tlast,
-            m_axis_tvalid    => m_axis_tvalid,
+            m_axis_tvalid    => m_axis_tvalid_int,  
             m_axis_tready    => m_axis_tready,
-            m_axis_tlast     => m_axis_tlast,
+            m_axis_tlast     => m_axis_tlast_int,  
             proc_s_valid     => s_valid_to_filter,
             proc_s_ready     => s_ready_from_filter,
             input_pixel_cnt  => input_pixel_cnt,
