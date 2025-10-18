@@ -5,6 +5,10 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 package my_types is
 
+    constant image_rows    : positive := 512; -- Default image rows
+    constant image_columns : positive := 512; -- Default image columns
+    constant fifo_depth    : positive := 512; -- Default FIFO depth
+
     constant pixel_width : positive := 8; -- 8-bit pixel values for grayscale images [0-255]
     constant gradient_width : positive := 12; -- 12-bit gradients to accommodate larger range after convolution + manhattan norm 
     
