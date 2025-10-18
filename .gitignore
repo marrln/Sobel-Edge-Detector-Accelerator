@@ -6,6 +6,10 @@
 /sources
 # txt files
 *.txt
+!data/**/*.txt
+
+# Python
+__pycache__/
 
 # VHDL LS
 *.toml 
