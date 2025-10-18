@@ -1,3 +1,13 @@
+-- This module implements a three-line buffer that assembles a 3x3 pixel window
+-- for every output pixel produced from a streaming image input. Internally the 
+-- design keeps three line buffers (line0, line1, line2), each able to store one 
+-- full row of pixels. New incoming pixels are written into the current column
+-- position of line0 and the older lines are shifted down. 
+-- When enough pixels have been received to fill at least two full rows plus the
+-- current row, a 3x3 window centered at the current pixel is output.
+-- For pixels near the edge of the frame, wrap-around addressing is used
+-- to read pixels from the right side of the line buffers.
+
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
@@ -24,99 +34,102 @@ entity window_buffer is
 end entity window_buffer;
 
 architecture behavioral of window_buffer is
+    -- Line buffers for three rows
+    type line_buffer_type is array (0 to columns-1) of std_logic_vector(pixel_width-1 downto 0);
+    signal line0, line1, line2 : line_buffer_type := (others => (others => '0'));
     
-    -- Buffer size: Need to store 2 complete lines + 3 additional pixels for 3x3 window
-    constant BUFFER_SIZE : integer := 2 * columns + 3;
+    -- Buffer control signals
+    signal buf_valid : std_logic := '0';
+    signal buf_last  : std_logic := '0';
+    signal pixel_counter : integer range 0 to pixels-1 := 0;
+    signal column_counter : integer range 0 to columns-1 := 0;
+    signal row_counter : integer range 0 to rows-1 := 0;
     
-    -- Kernel buffer type
-    type ram_t is array(0 to BUFFER_SIZE - 1) of std_logic_vector(pixel_width - 1 downto 0);
-    type pixel_window_indexes is array(0 to 2, 0 to 2) of integer;
-    signal kernel_buffer : ram_t := (others => (others => '0'));
-    
-    -- Index mapping for 3x3 window positions in the buffer
-    -- Mapping positions relative to newest pixel at index 0:
-    -- [2*columns+2] [2*columns+1] [2*columns]   -- Top row (oldest)
-    -- [columns+2]   [columns+1]   [columns]     -- Middle row  
-    -- [2]           [1]           [0]           -- Bottom row (newest)
-    
-    -- Function to convert 2D window coordinates to buffer indexes
-    function get_window_indexes(columns : integer) return pixel_window_indexes is
-        variable indexes : pixel_window_indexes;
-    begin
-        -- Top row (oldest pixels)
-        indexes(0, 0) := 2 * columns + 2;  -- Top-left
-        indexes(0, 1) := 2 * columns + 1;  -- Top-center  
-        indexes(0, 2) := 2 * columns;      -- Top-right
-        
-        -- Middle row
-        indexes(1, 0) := columns + 2;      -- Middle-left
-        indexes(1, 1) := columns + 1;      -- Middle-center
-        indexes(1, 2) := columns;          -- Middle-right
-        
-        -- Bottom row (newest pixels)
-        indexes(2, 0) := 2;                -- Bottom-left
-        indexes(2, 1) := 1;                -- Bottom-center
-        indexes(2, 2) := 0;                -- Bottom-right (current pixel)
-        
-        return indexes;
-    end function;
-    
-    constant window_indexes : pixel_window_indexes := get_window_indexes(columns);
-    
-    -- Internal signals
-    signal internal_valid : std_logic := '0';
-    signal internal_last  : std_logic := '0';
-    signal pixel_count : integer := 0;
-    signal can_output : std_logic := '0';
+    -- Internal ready signal
+    signal internal_ready : std_logic;
     
 begin
     process(clk, rst_n)
     begin
         if rst_n = '0' then
-
-            internal_valid <= '0';
-            internal_last  <= '0';
-            kernel_buffer <= (others => (others => '0'));
-            m_data <= (others => (others => (others => '0')));
-            pixel_count <= 0;
-            can_output <= '0';
+            line0 <= (others => (others => '0'));
+            line1 <= (others => (others => '0'));
+            line2 <= (others => (others => '0'));
+            buf_valid <= '0';
+            buf_last <= '0';
+            pixel_counter <= 0;
+            column_counter <= 0;
+            row_counter <= 0;
             
         elsif rising_edge(clk) then
-
-            internal_valid <= '0';
-            internal_last  <= '0';
-
-            if s_valid = '1' and m_ready = '1' then -- When both valid data and ready to transfer
+            buf_valid <= '0';
+            buf_last <= '0';
+            
+            -- Shift data through line buffers when new pixel arrives
+            if s_valid = '1' and internal_ready = '1' then
+                -- Shift lines: line2 <- line1 <- line0 <- new data
+                line2 <= line1;
+                line1 <= line0;
                 
-                for i in 0 to BUFFER_SIZE - 2 loop
-                    kernel_buffer(i + 1) <= kernel_buffer(i); -- Shift buffer: move all elements one position forward
-                end loop;
+                -- Store new pixel in current position
+                line0(column_counter) <= s_data;
                 
-                kernel_buffer(0) <= s_data; -- Insert new pixel at the beginning (newest position)
+                -- Update counters
+                pixel_counter <= pixel_counter + 1;
                 
-                if pixel_count < BUFFER_SIZE then
-                    pixel_count <= pixel_count + 1;
+                if column_counter = columns - 1 then
+                    column_counter <= 0;
+                    if row_counter = rows - 1 then
+                        row_counter <= 0;
+                    else
+                        row_counter <= row_counter + 1;
+                    end if;
+                else
+                    column_counter <= column_counter + 1;
                 end if;
                 
-                -- Update output only when buffer is full for the first time and every cycle thereafter
-                if pixel_count >= BUFFER_SIZE - 1 then -- Output only after buffer full
+                -- Generate output window when we have enough data (after 2 full rows + 3 pixels)
+                if row_counter >= 2 and column_counter >= 2 then
+                    -- Form the 3x3 window
                     for i in 0 to 2 loop
                         for j in 0 to 2 loop
-                            m_data(i, j) <= kernel_buffer(window_indexes(i, j)); -- Map buffer to 3x3 window
+                            case i is
+                                when 0 => 
+                                    m_data(i, j) <= line2((column_counter - 2 + j) mod columns);
+                                when 1 =>
+                                    m_data(i, j) <= line1((column_counter - 2 + j) mod columns);
+                                when 2 =>
+                                    m_data(i, j) <= line0((column_counter - 2 + j) mod columns);
+                                when others =>
+                                    null;
+                            end case;
                         end loop;
                     end loop;
-                    internal_valid <= '1';
-                    internal_last  <= s_last;
+                    
+                    buf_valid <= '1';
+                    
+                    -- Generate m_last for output stream
+                    if row_counter = rows - 1 and column_counter = columns - 1 then
+                        buf_last <= '1';
+                    end if;
+                end if;
+                
+                -- Handle input last signal
+                if s_last = '1' then
+                    pixel_counter <= 0;
+                    column_counter <= 0;
+                    row_counter <= 0;
                 end if;
             end if;
-        else 
-            kernel_buffer <= kernel_buffer; -- Hold state
         end if;
     end process;
-
+    
+    -- Ready when we can accept data (simple flow control)
+    internal_ready <= '1' when m_ready = '1' or buf_valid = '0' else '0';
+    
     -- Output assignments
-    m_valid <= internal_valid;
-    m_last  <= internal_last;
-    s_ready <= m_ready;  -- Flow control: ready when downstream is ready
-
+    s_ready <= internal_ready;
+    m_valid <= buf_valid;
+    m_last <= buf_last;
+    
 end architecture behavioral;
