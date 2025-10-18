@@ -37,10 +37,15 @@ begin
     s_ready <= ready_int;
 
     process(clk, rst_n)
-        variable p00, p01, p02 : signed(pixel_width-1 downto 0);
-        variable p10, p11, p12 : signed(pixel_width-1 downto 0);
-        variable p20, p21, p22 : signed(pixel_width-1 downto 0);
-        variable gx, gy : signed(kernel_width-1 downto 0);
+
+        -- Pixel variables with extra bit for signed arithmetic
+        variable p00, p01, p02 : signed(pixel_width downto 0); 
+        variable p10, p11, p12 : signed(pixel_width downto 0);
+        variable p20, p21, p22 : signed(pixel_width downto 0);
+
+        -- Variables for gradient computation
+        variable gx, gy : signed(gradient_width-1 downto 0);
+
     begin
         if rst_n = '0' then
             output_valid <= '0';
@@ -56,28 +61,31 @@ begin
             
             -- Accept new input when ready and valid
             if ready_int = '1' and s_valid = '1' then
-                -- Extract pixels from window
-                p00 := signed(s_data(0, 0));
-                p01 := signed(s_data(0, 1));
-                p02 := signed(s_data(0, 2));
-                p10 := signed(s_data(1, 0));
-                p11 := signed(s_data(1, 1));
-                p12 := signed(s_data(1, 2));
-                p20 := signed(s_data(2, 0));
-                p21 := signed(s_data(2, 1));
-                p22 := signed(s_data(2, 2));
-                
+
+                -- Extract pixels from window into signed variables
+                p00 := signed('0' & s_data(0, 0));
+                p01 := signed('0' & s_data(0, 1));
+                p02 := signed('0' & s_data(0, 2));
+                p10 := signed('0' & s_data(1, 0));
+                p11 := signed('0' & s_data(1, 1));
+                p12 := signed('0' & s_data(1, 2));
+                p20 := signed('0' & s_data(2, 0));
+                p21 := signed('0' & s_data(2, 1));
+                p22 := signed('0' & s_data(2, 2));
+
                 -- Sobel Gx: [-1, 0, 1; -2, 0, 2; -1, 0, 1]
-                gx := resize(p02 - p00 + 2*(p12 - p10) + p22 - p20, kernel_width);
+                gx := resize(p02 - p00 + 2*(p12 - p10) + p22 - p20, gradient_width);
                 
                 -- Sobel Gy: [1, 2, 1; 0, 0, 0; -1, -2, -1] 
-                gy := resize(p00 - p20 + 2*(p01 - p21) + p02 - p22, kernel_width);
+                gy := resize(p00 - p20 + 2*(p01 - p21) + p02 - p22, gradient_width);
                 
                 -- Register outputs
-                output_data(0) <= std_logic_vector(resize(gx, gradient_width));
-                output_data(1) <= std_logic_vector(resize(gy, gradient_width));
+                output_data(0) <= std_logic_vector(gx);
+                output_data(1) <= std_logic_vector(gy);
+
                 output_valid <= '1';
                 output_last  <= s_last;
+
             end if;
         end if;
     end process;
