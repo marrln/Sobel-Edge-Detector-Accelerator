@@ -23,7 +23,6 @@ architecture behavioral of scaler is
     signal data_reg  : std_logic_vector(pixel_width - 1 downto 0) := (others => '0');
     signal valid_reg : std_logic := '0';
     signal last_reg  : std_logic := '0';
-    signal ready_int : std_logic := '0';
 begin
     process(clk, rst_n)
     begin
@@ -32,26 +31,24 @@ begin
             last_reg  <= '0';
             data_reg  <= (others => '0');
         elsif rising_edge(clk) then
+            -- Clear valid when output is accepted
+            if m_ready = '1' then
+                valid_reg <= '0';
+                last_reg <= '0';
+            end if;
+            
             -- Register new data when we accept input
-            if s_valid = '1' and ready_int = '1' then
-                -- NOTE: Uncomment one of the following lines to apply scaling, scaling makes the image darker
-                -- data_reg  <= std_logic_vector(shift_right(unsigned(s_data), 2)); -- Divide by 4
-                -- data_reg  <= std_logic_vector(shift_right(unsigned(s_data), 1)); -- Divide by 2
-                data_reg  <= s_data;  -- No scaling
+            if s_valid = '1' and (valid_reg = '0' or m_ready = '1') then
+                -- data_reg  <= s_data;  -- No scaling
+                data_reg  <= std_logic_vector(shift_right(unsigned(s_data), 1)); -- Divide by 2
                 last_reg  <= s_last;
                 valid_reg <= '1';
-            -- Clear valid when output is accepted
-            elsif m_ready = '1' and valid_reg = '1' then
-                valid_reg <= '0';
             end if;
         end if;
     end process;
 
-    -- AXI-compliant handshake logic
-    ready_int <= '1' when (valid_reg = '0') or (m_ready = '1' and valid_reg = '1') else '0';
-    
     -- Output assignments
-    s_ready <= ready_int;
+    s_ready <= '1' when (valid_reg = '0') or (m_ready = '1') else '0';
     m_valid <= valid_reg;
     m_last  <= last_reg;
     m_data  <= data_reg;
