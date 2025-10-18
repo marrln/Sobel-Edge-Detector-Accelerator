@@ -29,10 +29,10 @@ The IP core implements a pipelined edge detection algorithm with AXI4-Lite contr
 |  |   AXI4-Lite     | -> | axi_lite_       | -> | system_enable   |              |
 |  |   Registers     |    | interface       |    | signal          |              |
 |  |   (AWADDR,      |    |                 |    |                 |              |
-|  |    WDATA, etc.) |    | Register Map:   |    | Controls:       |              |
-|  |                 |    | - 0x00: Control |    | - Start/Stop     |             |
-|  |                 |    | - 0x04: Status  |    | - Reset          |             |
-|  |                 |    | - 0x08: Version |    | - Status Read    |             |
+|  |    WDATA,       |    | Register Map:   |    | Controls:       |              |
+|  |    etc.)        |    | - 0x00: Control |    | - Start/Stop    |              |
+|  |                 |    | - 0x04: Status  |    | - Reset         |              |
+|  |                 |    | - 0x08: Version |    | - Status Read   |              |
 |  +-----------------+    +-----------------+    +-----------------+              |
 +---------------------------------------------------------------------------------+
                                          |
