@@ -54,8 +54,10 @@ The results showed a **significant speedup** of the Sobel edge detection when ex
 
 ## Repository Structure 
 
-[sobel_software/](./sobel_software): Contains the C implementation of the Sobel algorithm with timing utilities.
-[TODO] : Contains the VHDL implementation of the Sobel IP Core and related files.
-[TODO] : Contains the Vivado project files for the complete SoC design integrating the Sobel IP Core.
-[doc/](./doc): Contains the project description and report files.
-[data/](./data): Contains sample images for testing the Sobel implementations.
+- **[sobel_software/](./sobel_software)**: Contains the C implementation of the Sobel algorithm with timing utilities.
+- **[sobel_ip_core/](./sobel_ip_core)**: Contains the VHDL implementation of the Sobel IP Core and related files, including testbenches and simulation scripts.
+- **[sobel_pl/](./sobel_pl)**: Contains the Vivado project files and C-based user application for the complete SoC design integrating the Sobel IP Core.
+- **[scripts/](./scripts)**: Contains setup scripts for the development environment.
+- **[python-viewer/](./python-viewer)**: Contains a Python-based image viewer for visualizing and analyzing Sobel edge detection results.
+- **[data/](./data)**: Contains sample images and outputs of both the software and hardware implementations for testing and analysis.
+- **[doc/](./doc)**: Contains the project description and report files.
