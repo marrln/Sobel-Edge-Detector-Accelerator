@@ -13,7 +13,7 @@ architecture behavioral of sobel_processing_core_tb is
     --------------------------------------------------------------------------
     -- Constants
     --------------------------------------------------------------------------
-    constant CLK_PERIOD : time := 10 ns;   -- 100 MHz
+    constant CLK_PERIOD : time := 5 ns;   -- 200 MHz
 
     constant INPUT_FILE  : string := "lena_512_512_csv.txt";
     constant OUTPUT_FILE : string := "output_hw_lena_512_512_csv.txt";
