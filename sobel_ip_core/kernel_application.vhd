@@ -19,54 +19,38 @@ entity kernel_application is
 end entity kernel_application;
 
 architecture Behavioral of kernel_application is
-    -- Internal registered signals
-    signal input_data_reg  : pixel_window := (others => (others => (others => '0')));
-    signal input_last_reg  : std_logic := '0';
-    signal input_valid_reg : std_logic := '0';
+    signal output_valid : std_logic := '0';
+    signal output_last  : std_logic := '0';
+    signal output_data  : gradient_pair := (others => (others => '0'));
     
-    signal output_data_reg : gradient_pair := (others => (others => '0'));
-    signal output_last_reg : std_logic := '0';
-    signal output_valid_reg : std_logic := '0';
-    
+    -- Ready when downstream can accept data or we don't have valid data
+    signal ready_int : std_logic;
 begin
-    -- Flow control: ready when we can accept new data
-    s_ready <= m_ready or not output_valid_reg;
+    -- Flow control: ready when output buffer is empty or downstream is ready
+    ready_int <= not output_valid or m_ready;
+    s_ready <= ready_int;
 
     process(clk, rst_n)
-        variable p00, p01, p02 : signed(pixel_width-1 downto 0) := (others => '0');
-        variable p10, p11, p12 : signed(pixel_width-1 downto 0) := (others => '0');
-        variable p20, p21, p22 : signed(pixel_width-1 downto 0) := (others => '0');
-        variable gx_temp, gy_temp : signed(kernel_width-1 downto 0) := (others => '0');
+        variable p00, p01, p02 : signed(pixel_width-1 downto 0);
+        variable p10, p11, p12 : signed(pixel_width-1 downto 0);
+        variable p20, p21, p22 : signed(pixel_width-1 downto 0);
+        variable gx, gy : signed(kernel_width-1 downto 0);
     begin
         if rst_n = '0' then
-            -- Reset all registers
-            input_data_reg <= (others => (others => (others => '0')));
-            input_valid_reg <= '0';
-            input_last_reg <= '0';
-            output_data_reg <= (others => (others => '0'));
-            output_valid_reg <= '0';
-            output_last_reg <= '0';
+            output_valid <= '0';
+            output_last  <= '0';
+            output_data  <= (others => (others => '0'));
             
         elsif rising_edge(clk) then
-            -- Default: maintain output unless updated
-            output_valid_reg <= output_valid_reg;
-            output_last_reg <= output_last_reg;
-            
-            -- When downstream is ready and we have valid output, clear output
-            if m_ready = '1' and output_valid_reg = '1' then
-                output_valid_reg <= '0';
-                output_last_reg <= '0';
+            -- Clear output when accepted by downstream
+            if m_ready = '1' and output_valid = '1' then
+                output_valid <= '0';
+                output_last  <= '0';
             end if;
             
-            -- Accept new input data when ready
-            if s_ready = '1' and s_valid = '1' then
-                -- Register input data and control signals
-                input_data_reg <= s_data;
-                input_valid_reg <= '1';
-                input_last_reg <= s_last;
-                
-                -- Perform Sobel computation
-                -- Convert pixel data to signed
+            -- Accept new input when ready and valid
+            if ready_int = '1' and s_valid = '1' then
+                -- Extract pixels from window
                 p00 := signed(s_data(0, 0));
                 p01 := signed(s_data(0, 1));
                 p02 := signed(s_data(0, 2));
@@ -77,31 +61,24 @@ begin
                 p21 := signed(s_data(2, 1));
                 p22 := signed(s_data(2, 2));
                 
-                -- Sobel Gx kernel: [-1, 0, 1; -2, 0, 2; -1, 0, 1]
-                gx_temp := resize(p02 - p00 + 2*(p12 - p10) + p22 - p20, kernel_width);
+                -- Sobel Gx: [-1, 0, 1; -2, 0, 2; -1, 0, 1]
+                gx := resize(p02 - p00 + 2*(p12 - p10) + p22 - p20, kernel_width);
                 
-                -- -- Sobel Gy kernel: [-1, -2, -1; 0, 0, 0; 1, 2, 1]
-                -- gy_temp := resize(p20 - p00 + 2*(p21 - p01) + p22 - p02, kernel_width);
-                -- Sobel Gy kernel: [1, 2, 1; 0, 0, 0; -1, -2, -1] (signs reversed)
-                gy_temp := resize(p00 - p20 + 2*(p01 - p21) + p02 - p22, kernel_width);
+                -- Sobel Gy: [1, 2, 1; 0, 0, 0; -1, -2, -1] 
+                gy := resize(p00 - p20 + 2*(p01 - p21) + p02 - p22, kernel_width);
                 
-                -- Register output results
-                output_data_reg(0) <= std_logic_vector(resize(gx_temp, gradient_width)); -- Gx
-                output_data_reg(1) <= std_logic_vector(resize(gy_temp, gradient_width)); -- Gy
-                output_valid_reg <= '1';
-                output_last_reg <= s_last;
-                
-            elsif s_ready = '1' then
-                -- No valid input, clear input registers
-                input_valid_reg <= '0';
-                input_last_reg <= '0';
+                -- Register outputs
+                output_data(0) <= std_logic_vector(resize(gx, gradient_width));
+                output_data(1) <= std_logic_vector(resize(gy, gradient_width));
+                output_valid <= '1';
+                output_last  <= s_last;
             end if;
         end if;
     end process;
     
-    -- Connect outputs
-    m_valid <= output_valid_reg;
-    m_last  <= output_last_reg;
-    m_data  <= output_data_reg;
+    -- Output assignments
+    m_valid <= output_valid;
+    m_last  <= output_last;
+    m_data  <= output_data;
     
 end Behavioral;
