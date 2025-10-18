@@ -1,3 +1,9 @@
+-- Accepts a 3x3 `pixel_window` and unpacks nine pixel samples into local 
+-- signed variables and applies two 3x3 Sobel kernels to compute horizontal
+-- (Gx) and vertical (Gy) gradients.
+-- Gradient arithmetic is performed with signed arithmetic and resized into
+-- the configured `gradient_width` for output.
+
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
