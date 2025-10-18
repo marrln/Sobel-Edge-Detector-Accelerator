@@ -6,10 +6,10 @@ use WORK.MY_TYPES.ALL;
 
 entity sobel_accelerator is
     generic (
-        rows       : positive := 512;
-        columns    : positive := 512;
-        pixels     : positive := 512 * 512;
-        fifo_depth : positive := 512
+        rows       : positive := image_rows;
+        columns    : positive := image_columns;
+        pixels     : positive := image_rows * image_columns;
+        fifo_depth : positive := fifo_depth
     );
     port (
         -- Clock and Reset
@@ -76,9 +76,9 @@ architecture structural of sobel_accelerator is
 
     component sobel_processing_core is
         generic (
-            rows    : positive := 512;
-            columns : positive := 512;
-            pixels  : positive := 512 * 512
+            rows    : positive := image_rows;
+            columns : positive := image_columns;
+            pixels  : positive := image_rows * image_columns
         );
         port (
             clk     : in std_logic;

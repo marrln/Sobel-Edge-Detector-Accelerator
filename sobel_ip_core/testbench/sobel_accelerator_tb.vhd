@@ -29,10 +29,10 @@ architecture behavioral of sobel_accelerator_tb is
     -------------------------------------------------------------------------- 
     component sobel_accelerator is
         generic (
-            rows       : positive := IMG_HEIGHT;
-            columns    : positive := IMG_WIDTH;
-            pixels     : positive := TOTAL_PIXELS;
-            fifo_depth : positive := 512
+            rows       : positive := image_rows;
+            columns    : positive := image_columns;
+            pixels     : positive := image_rows * image_columns;
+            fifo_depth : positive := fifo_depth
         );
         port (
             clk_int          : in  std_logic;
@@ -95,7 +95,7 @@ begin
             rows       => IMG_HEIGHT,
             columns    => IMG_WIDTH,
             pixels     => TOTAL_PIXELS,
-            fifo_depth => 512
+            fifo_depth => fifo_depth
         )
         port map (
             clk_int          => clk_int,

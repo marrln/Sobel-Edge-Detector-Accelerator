@@ -15,9 +15,9 @@ use WORK.MY_TYPES.ALL;
 
 entity window_buffer is
     generic (
-        rows    : positive := 512;
-        columns : positive := 512;
-        pixels  : positive := rows * columns
+        rows    : positive := image_rows;
+        columns : positive := image_columns;
+        pixels  : positive := image_rows * image_columns
     );
     port (
         clk     : in std_logic;
