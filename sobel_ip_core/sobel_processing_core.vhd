@@ -1,4 +1,4 @@
--- AXI4-Stream Sobel processing core: scaler -> window buffer -> sobel pipeline
+-- AXI4-Stream Sobel processing core: scaler -> window buffer -> kernel application -> manhattan norm
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
