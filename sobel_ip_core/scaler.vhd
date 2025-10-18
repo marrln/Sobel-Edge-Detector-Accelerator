@@ -1,10 +1,10 @@
 -- AXI4-Stream compliant scaler with proper handshaking
 -- This scaler reduces the pixel value by half (simple right shift).
 -- Note: This will affect the image brightness, it will be darker.
--- Simply passing the input to output without scaling can be done by
--- uncommenting the relevant line in the process below. 
--- This will cause some data to overflow later in the pipeline, causing
--- the edges to be sharper but may introduce artifacts.
+-- Simply passing the input to output without scaling is acceptable.
+-- By uncommenting the relevant line in the process below you can enable scaling. 
+-- Not using scaling will cause some data to overflow later in the pipeline,
+-- causing the edges to be sharper and appear more similar to the software version.
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
@@ -46,8 +46,9 @@ begin
             
             -- Register new data when we accept input
             if s_valid = '1' and (valid_reg = '0' or m_ready = '1') then
-                -- data_reg  <= s_data;  -- No scaling
-                data_reg  <= std_logic_vector(shift_right(unsigned(s_data), 1)); -- Divide by 2
+                data_reg  <= s_data;  -- No scaling
+                -- data_reg  <= std_logic_vector(shift_right(unsigned(s_data), 1)); -- Divide by 2
+                -- data_reg  <= std_logic_vector(shift_right(unsigned(s_data), 2)); -- Divide by 4
                 last_reg  <= s_last;
                 valid_reg <= '1';
             end if;
