@@ -1,4 +1,11 @@
 -- AXI4-Stream compliant scaler with proper handshaking
+-- This scaler reduces the pixel value by half (simple right shift).
+-- Note: This will affect the image brightness, it will be darker.
+-- Simply passing the input to output without scaling can be done by
+-- uncommenting the relevant line in the process below. 
+-- This will cause some data to overflow later in the pipeline, causing
+-- the edges to be sharper but may introduce artifacts.
+
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
