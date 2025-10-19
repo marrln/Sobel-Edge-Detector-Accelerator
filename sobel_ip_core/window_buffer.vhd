@@ -1,13 +1,9 @@
--- This module implements a three-line buffer that assembles a 3x3 pixel window
--- for every output pixel produced from a streaming image input. Internally the 
--- design keeps three line buffers (line0, line1, line2), each able to store one 
--- full row of pixels. New incoming pixels are written into the current column
--- position of line0 and the older lines are shifted down. 
+-- This module implements a shifting memory buffer that assembles a 3x3 pixel window
+-- for every output pixel produced from a streaming image input. Internally the
+-- design uses a single memory array that shifts pixels on each new input.
 -- When enough pixels have been received to fill at least two full rows plus the
 -- current row, a 3x3 window centered at the current pixel is output.
--- For pixels near the edge of the frame, wrap-around addressing is used
--- to read pixels from the right side of the line buffers.
-
+-- Edge pixels are cropped (not processed) to ensure all neighbors are valid.
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
