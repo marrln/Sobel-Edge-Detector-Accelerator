@@ -17,7 +17,7 @@ architecture behavioral of sobel_accelerator_tb is
     constant CLK_EXT_PERIOD : time := 10 ns;  -- 100 MHz
 
     constant INPUT_FILE  : string := "C:/temp/sobel_work/lena_512_512_csv.txt";
-    constant OUTPUT_FILE : string := "C:/temp/sobel_work/output_lena_512_512_csv.txt";
+    constant OUTPUT_FILE : string := "C:/temp/sobel_work/output_hw_lena_512_512_csv.txt";
 
     constant IMG_WIDTH  : integer := 512;
     constant IMG_HEIGHT : integer := 512;
