@@ -17,7 +17,7 @@
 #*****************************************************************************************
 
 # Set the reference directory for source file relative paths (by default the value is script directory path)
-set origin_dir "/home/rtsela/Desktop/final_project_ws"
+set origin_dir "C:/Users/mrlnp/OneDrive - National and Kapodistrian University of Athens/Υπολογιστής/Προηγμένη Σχεδίαση Ψηφιακών Συστημάτων/Sobel-Edge-Detector-Accelerator"
 
 # Use origin directory path location variable, if specified in the tcl shell
 if { [info exists ::origin_dir_loc] } {
@@ -84,14 +84,14 @@ if { $::argc > 0 } {
 set orig_proj_dir "[file normalize "$origin_dir/empty_tcl_gen/sobel_soc"]"
 
 # Create project
-create_project ${_xil_proj_name_} ./${_xil_proj_name_} -part xc7z020clg484-1 -force
+create_project ${_xil_proj_name_} "C:/Vivado Projects/${_xil_proj_name_}" -part xc7z020clg484-1 -force
 
 # Set the directory path for the new project
 set proj_dir [get_property directory [current_project]]
 
 # Set project properties
 set obj [current_project]
-set_property -name "board_part" -value "avnet.com:zedboard:part0:1.4" -objects $obj
+set_property -name "board_part" -value "digilentinc.com:zedboard:part0:1.1" -objects $obj
 set_property -name "default_lib" -value "xil_defaultlib" -objects $obj
 set_property -name "enable_resource_estimation" -value "0" -objects $obj
 set_property -name "enable_vhdl_2008" -value "1" -objects $obj
