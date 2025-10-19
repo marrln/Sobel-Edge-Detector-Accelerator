@@ -6,10 +6,10 @@ use WORK.MY_TYPES.ALL;
 
 entity sobel_accelerator is
     generic (
-        rows       : positive := image_rows;
-        columns    : positive := image_columns;
-        pixels     : positive := image_rows * image_columns;
-        fifo_depth : positive := fifo_depth
+        rows       : positive := 512;
+        columns    : positive := 512;
+        pixels     : positive := 512 * 512;
+        fifo_depth : positive := 512
     );
     port (
         -- Clock and Reset
@@ -39,26 +39,26 @@ end sobel_accelerator;
 
 architecture structural of sobel_accelerator is
     
-    signal sobel_rst_n : std_logic := '0';
+    signal sobel_rst_n : std_logic;
 
     -- Input FIFO interface signals
-    signal s_valid_to_filter    : std_logic := '0';
-    signal s_ready_from_filter  : std_logic := '0';
-    signal s_data_to_filter     : std_logic_vector(pixel_width - 1 downto 0) := (others => '0');
-    signal s_last_to_filter     : std_logic := '0';
+    signal s_valid_to_filter    : std_logic;
+    signal s_ready_from_filter  : std_logic;
+    signal s_data_to_filter     : std_logic_vector(pixel_width - 1 downto 0);
+    signal s_last_to_filter     : std_logic;
 
     -- Sobel processing core interface signals
-    signal m_valid_from_filter  : std_logic := '0';
-    signal m_ready_to_filter    : std_logic := '0';
-    signal m_data_from_filter   : std_logic_vector(pixel_width - 1 downto 0) := (others => '0');
-    signal m_last_from_filter   : std_logic := '0';
+    signal m_valid_from_filter  : std_logic;
+    signal m_ready_to_filter    : std_logic;
+    signal m_data_from_filter   : std_logic_vector(pixel_width - 1 downto 0);
+    signal m_last_from_filter   : std_logic;
 
     -- Internal signals for output ports
-    signal s_axis_tready_int : std_logic := '0';
-    signal m_axis_tvalid_int : std_logic := '0';
-    signal m_axis_tlast_int  : std_logic := '0';
+    signal s_axis_tready_int : std_logic;
+    signal m_axis_tvalid_int : std_logic;
+    signal m_axis_tlast_int  : std_logic;
 
-    component fifo is
+    component axis_data_fifo is
         port (
             s_axis_aclk    : in  std_logic;
             s_axis_aresetn : in  std_logic;
@@ -133,7 +133,7 @@ begin
     ------------------------------------------------------------------
     -- Input FIFO (External ? Internal clock domain crossing)
     ------------------------------------------------------------------
-    Input_FIFO : fifo
+    Input_FIFO : axis_data_fifo
         port map (
             s_axis_aclk    => clk_ext,
             s_axis_aresetn => sobel_rst_n,
@@ -173,7 +173,7 @@ begin
     ------------------------------------------------------------------
     -- Output FIFO (Internal ? External clock domain crossing)
     ------------------------------------------------------------------
-    Output_FIFO : fifo
+    Output_FIFO : axis_data_fifo
         port map (
             s_axis_aclk    => clk_int,
             s_axis_aresetn => sobel_rst_n,
