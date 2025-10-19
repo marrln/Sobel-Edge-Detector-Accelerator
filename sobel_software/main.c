@@ -73,7 +73,8 @@ int main(int argc, char *argv[]) {
 
     // Optionally save Euclidean version
     char euclidean_filename[256];
-    snprintf(euclidean_filename, sizeof(euclidean_filename), "euclidean_%s", output_filename);
+    // snprintf(euclidean_filename, sizeof(euclidean_filename), "euclidean_%s", output_filename);
+    snprintf(euclidean_filename, sizeof(euclidean_filename), "%s_euclidean.raw", output_filename);
     printf("Saving Euclidean result to: %s\n", euclidean_filename);
     if (save_raw_image(euclidean_filename, output_euclidean) != 0) {
         printf("[ERROR] Failed to save Euclidean output image\n");
