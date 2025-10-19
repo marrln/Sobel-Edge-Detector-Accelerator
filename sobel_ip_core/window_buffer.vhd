@@ -34,9 +34,11 @@ entity window_buffer is
 end entity window_buffer;
 
 architecture behavioral of window_buffer is
-    -- Line buffers for three rows
-    type line_buffer_type is array (0 to columns-1) of std_logic_vector(pixel_width-1 downto 0);
-    signal line0, line1, line2 : line_buffer_type := (others => (others => '0'));
+    -- Memory for storing pixels in a shifting window
+    -- Size accommodates two full lines plus extra pixels for 3x3 window formation
+    constant MEM_SIZE : integer := 2 * columns + 3;
+    type pixel_buffer_type is array(MEM_SIZE - 1 downto 0) of std_logic_vector(pixel_width - 1 downto 0);
+    signal pixel_buffer : pixel_buffer_type := (others => (others => '0'));
     
     -- Buffer control signals
     signal buf_valid : std_logic := '0';
@@ -48,13 +50,15 @@ architecture behavioral of window_buffer is
     -- Internal ready signal
     signal internal_ready : std_logic;
     
+    -- RAM synthesis attribute to ensure Block RAM inference
+    attribute ram_style : string;
+    attribute ram_style of pixel_buffer : signal is "block";
+    
 begin
     process(clk, rst_n)
     begin
         if rst_n = '0' then
-            line0 <= (others => (others => '0'));
-            line1 <= (others => (others => '0'));
-            line2 <= (others => (others => '0'));
+            pixel_buffer <= (others => (others => '0'));
             buf_valid <= '0';
             buf_last <= '0';
             pixel_counter <= 0;
@@ -65,14 +69,15 @@ begin
             buf_valid <= '0';
             buf_last <= '0';
             
-            -- Shift data through line buffers when new pixel arrives
+            -- Process new pixel when valid and ready
             if s_valid = '1' and internal_ready = '1' then
-                -- Shift lines: line2 <- line1 <- line0 <- new data
-                line2 <= line1;
-                line1 <= line0;
+                -- Shift existing pixels in memory to make space for new pixel
+                for i in 0 to MEM_SIZE - 2 loop
+                    pixel_buffer(i + 1) <= pixel_buffer(i);
+                end loop;
                 
-                -- Store new pixel in current position
-                line0(column_counter) <= s_data;
+                -- Add new pixel to memory
+                pixel_buffer(0) <= s_data;
                 
                 -- Update counters
                 pixel_counter <= pixel_counter + 1;
@@ -88,23 +93,23 @@ begin
                     column_counter <= column_counter + 1;
                 end if;
                 
-                -- Generate output window when we have enough data (after 2 full rows + 3 pixels)
+                -- Generate output window when we have enough data (after 2 full rows + current row has 3 pixels)
                 if row_counter >= 2 and column_counter >= 2 then
-                    -- Form the 3x3 window
-                    for i in 0 to 2 loop
-                        for j in 0 to 2 loop
-                            case i is
-                                when 0 => 
-                                    m_data(i, j) <= line2((column_counter - 2 + j) mod columns);
-                                when 1 =>
-                                    m_data(i, j) <= line1((column_counter - 2 + j) mod columns);
-                                when 2 =>
-                                    m_data(i, j) <= line0((column_counter - 2 + j) mod columns);
-                                when others =>
-                                    null;
-                            end case;
-                        end loop;
-                    end loop;
+                    -- Form the 3x3 window from memory positions
+                    -- Top row (two rows ago): positions relative to current column
+                    m_data(0, 0) <= pixel_buffer(2*columns + 2); -- Top left (column-1, row-2)
+                    m_data(0, 1) <= pixel_buffer(2*columns + 1); -- Top center (column, row-2)  
+                    m_data(0, 2) <= pixel_buffer(2*columns);     -- Top right (column+1, row-2)
+                    
+                    -- Middle row (one row ago): positions relative to current column
+                    m_data(1, 0) <= pixel_buffer(columns + 2);   -- Middle left (column-1, row-1)
+                    m_data(1, 1) <= pixel_buffer(columns + 1);   -- Center pixel (column, row-1)
+                    m_data(1, 2) <= pixel_buffer(columns);       -- Middle right (column+1, row-1)
+                    
+                    -- Bottom row (current row): most recent pixels
+                    m_data(2, 0) <= pixel_buffer(2);             -- Bottom left (column-1, row)
+                    m_data(2, 1) <= pixel_buffer(1);             -- Bottom center (column, row)
+                    m_data(2, 2) <= pixel_buffer(0);             -- Bottom right (column+1, row) - current pixel
                     
                     buf_valid <= '1';
                     
