@@ -39,7 +39,6 @@ architecture behavioral of window_buffer is
     -- Buffer control signals
     signal buf_valid : std_logic := '0';
     signal buf_last  : std_logic := '0';
-    signal pixel_counter : integer range 0 to pixels-1 := 0;
     signal column_counter : integer range 0 to columns-1 := 0;
     signal row_counter : integer range 0 to rows-1 := 0;
     
@@ -57,7 +56,6 @@ begin
             pixel_buffer <= (others => (others => '0'));
             buf_valid <= '0';
             buf_last <= '0';
-            pixel_counter <= 0;
             column_counter <= 0;
             row_counter <= 0;
             
@@ -76,7 +74,6 @@ begin
                 pixel_buffer(0) <= s_data;
                 
                 -- Update counters
-                pixel_counter <= pixel_counter + 1;
                 
                 if column_counter = columns - 1 then
                     column_counter <= 0;
@@ -117,7 +114,6 @@ begin
                 
                 -- Handle input last signal
                 if s_last = '1' then
-                    pixel_counter <= 0;
                     column_counter <= 0;
                     row_counter <= 0;
                 end if;
