@@ -58,7 +58,7 @@ architecture structural of sobel_accelerator is
     signal m_axis_tvalid_int : std_logic;
     signal m_axis_tlast_int  : std_logic;
 
-    component axis_data_fifo is
+    component fifo_generator_0 is
         port (
             s_axis_aclk    : in  std_logic;
             s_axis_aresetn : in  std_logic;
@@ -133,7 +133,7 @@ begin
     ------------------------------------------------------------------
     -- Input FIFO (External ? Internal clock domain crossing)
     ------------------------------------------------------------------
-    Input_FIFO : axis_data_fifo
+    Input_FIFO : fifo_generator_0
         port map (
             s_axis_aclk    => clk_ext,
             s_axis_aresetn => sobel_rst_n,
@@ -173,7 +173,7 @@ begin
     ------------------------------------------------------------------
     -- Output FIFO (Internal ? External clock domain crossing)
     ------------------------------------------------------------------
-    Output_FIFO : axis_data_fifo
+    Output_FIFO : fifo_generator_0
         port map (
             s_axis_aclk    => clk_int,
             s_axis_aresetn => sobel_rst_n,

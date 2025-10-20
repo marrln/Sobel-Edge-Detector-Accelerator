@@ -98,7 +98,7 @@ architecture structural of axi4_sobel_accelerator_ip_core is
         );
     end component;
 
-    component axi_lite_interface is
+    component axi4_lite_interface is
         port (
             s_axi_aclk        : in std_logic;
             s_axi_aresetn     : in std_logic;
@@ -176,7 +176,7 @@ begin
     -- AXI4-Lite Interface Instance
     -- Provides software control and monitoring via register interface
     ------------------------------------------------------------------
-    axi_lite_interface_inst : axi_lite_interface
+    axi_lite_interface_inst : axi4_lite_interface
         port map (
             -- AXI4-Lite clock and reset
             s_axi_aclk        => s_axi_aclk,
