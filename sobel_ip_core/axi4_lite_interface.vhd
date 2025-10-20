@@ -305,7 +305,7 @@ begin
     -- Register Read Multiplexer
     -- Selects which register data to return based on read address
     ------------------------------------------------------------------
-    process (slv_reg0, slv_reg1, slv_reg2, slv_reg3, axi_araddr, s_axi_aresetn, slv_reg_rden)
+    process (slv_reg0, slv_reg1, slv_reg2, slv_reg3, axi_araddr, s_axi_aresetn, slv_reg_rden, pixel_count_in, pixel_count_out, clock_cycles_count)
         variable loc_addr : std_logic_vector(1 downto 0);
     begin
         loc_addr := axi_araddr(3 downto 2);  -- Extract register address
