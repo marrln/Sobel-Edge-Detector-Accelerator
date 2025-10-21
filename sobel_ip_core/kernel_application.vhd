@@ -1,9 +1,3 @@
--- Accepts a 3x3 `pixel_window` and unpacks nine pixel samples into local 
--- signed variables and applies two 3x3 Sobel kernels to compute horizontal
--- (Gx) and vertical (Gy) gradients.
--- Gradient arithmetic is performed with signed arithmetic and resized into
--- the configured `gradient_width` for output.
-
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
@@ -32,19 +26,19 @@ architecture Behavioral of kernel_application is
     
     -- Ready when downstream can accept data or we don't have valid data
     signal ready_int : std_logic;
+
 begin
-    -- Flow control: ready when output buffer is empty or downstream is ready
+    -- Ready when downstream can accept data or we don't have valid data
     ready_int <= not output_valid or m_ready;
     s_ready <= ready_int;
 
     process(clk, rst_n)
+        -- Use wider signed variables for intermediate calculations
+        variable p00, p01, p02 : signed(gradient_width-1 downto 0);
+        variable p10, p11, p12 : signed(gradient_width-1 downto 0);
+        variable p20, p21, p22 : signed(gradient_width-1 downto 0);
 
-        -- Pixel variables with extra bit for signed arithmetic
-        variable p00, p01, p02 : signed(pixel_width downto 0); 
-        variable p10, p11, p12 : signed(pixel_width downto 0);
-        variable p20, p21, p22 : signed(pixel_width downto 0);
-
-        -- Variables for gradient computation
+        -- Variables for gradient computation with sufficient width
         variable gx, gy : signed(gradient_width-1 downto 0);
 
     begin
@@ -62,31 +56,31 @@ begin
             
             -- Accept new input when ready and valid
             if ready_int = '1' and s_valid = '1' then
+                -- Extract pixels and convert to signed with proper width
+                p00 := signed(resize(unsigned(s_data(0, 0)), gradient_width));
+                p01 := signed(resize(unsigned(s_data(0, 1)), gradient_width));
+                p02 := signed(resize(unsigned(s_data(0, 2)), gradient_width));
+                p10 := signed(resize(unsigned(s_data(1, 0)), gradient_width));
+                p11 := signed(resize(unsigned(s_data(1, 1)), gradient_width));
+                p12 := signed(resize(unsigned(s_data(1, 2)), gradient_width));
+                p20 := signed(resize(unsigned(s_data(2, 0)), gradient_width));
+                p21 := signed(resize(unsigned(s_data(2, 1)), gradient_width));
+                p22 := signed(resize(unsigned(s_data(2, 2)), gradient_width));
 
-                -- Extract pixels from window into signed variables
-                p00 := signed('0' & s_data(0, 0));
-                p01 := signed('0' & s_data(0, 1));
-                p02 := signed('0' & s_data(0, 2));
-                p10 := signed('0' & s_data(1, 0));
-                p11 := signed('0' & s_data(1, 1));
-                p12 := signed('0' & s_data(1, 2));
-                p20 := signed('0' & s_data(2, 0));
-                p21 := signed('0' & s_data(2, 1));
-                p22 := signed('0' & s_data(2, 2));
-
-                -- Sobel Gx: [-1, 0, 1; -2, 0, 2; -1, 0, 1]
-                gx := resize(p02 - p00 + 2*(p12 - p10) + p22 - p20, gradient_width);
+                -- Compute gradients using Sobel operator
+                gx := resize(p02 - p00, gradient_width) + 
+                      resize(shift_left(p12 - p10, 1), gradient_width) +  -- 2*(p12-p10)
+                      resize(p22 - p20, gradient_width);
                 
-                -- Sobel Gy: [1, 2, 1; 0, 0, 0; -1, -2, -1] 
-                gy := resize(p00 - p20 + 2*(p01 - p21) + p02 - p22, gradient_width);
+                gy := resize(p00 + shift_left(p01, 1) + p02, gradient_width) -  -- p00 + 2*p01 + p02
+                      resize(p20 + shift_left(p21, 1) + p22, gradient_width);   -- p20 + 2*p21 + p22
                 
-                -- Register outputs
+                -- Register outputs - resize to gradient_width
                 output_data(0) <= std_logic_vector(gx);
                 output_data(1) <= std_logic_vector(gy);
 
                 output_valid <= '1';
                 output_last  <= s_last;
-
             end if;
         end if;
     end process;
