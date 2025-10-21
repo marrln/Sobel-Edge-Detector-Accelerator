@@ -7,7 +7,7 @@ implementations, and visualize distributions and debug outputs.
 
 import os
 
-import cv2
+import cv2 
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -67,7 +67,7 @@ def compare_with_software_sobel(
     plt.axis('off')
     plt.subplot(2, 4, 2)
     plt.imshow(software_sobel, cmap='gray')
-    plt.title(f'Software Sobel ({width}x{height})')
+    plt.title(f'Software Sobel by Open CV ({width}x{height})')
     plt.axis('off')
     plt.subplot(2, 4, 3)
     plt.imshow(hw_sobel, cmap='gray')
@@ -126,8 +126,8 @@ def compare_sobel_distributions(
     sw_output = load_raw_image(sw_dir, sw_file, width, height)
 
     plt.figure(figsize=(10, 6))
-    plt.hist(hw_sobel.flatten(), bins=50, alpha=0.3, label='Hardware Sobel', color='yellow')
-    plt.hist(sw_output.flatten(), bins=50, alpha=0.3, label='Software Output', color='green')
+    plt.hist(hw_sobel.flatten(), bins=50, alpha=0.3, label='Hardware Sobel', color='black')
+    plt.hist(sw_output.flatten(), bins=50, alpha=0.3, label='Software Output', color='red')
     plt.title('Comparison of Sobel Value Distributions')
     plt.xlabel('Pixel Value')
     plt.ylabel('Frequency')
