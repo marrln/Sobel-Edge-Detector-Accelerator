@@ -27,9 +27,9 @@ entity scaler is
 end entity scaler;
 
 architecture behavioral of scaler is
-    signal data_reg  : std_logic_vector(pixel_width - 1 downto 0) := (others => '0');
-    signal valid_reg : std_logic := '0';
-    signal last_reg  : std_logic := '0';
+    signal data_reg  : std_logic_vector(pixel_width - 1 downto 0);
+    signal valid_reg : std_logic;
+    signal last_reg  : std_logic;
 begin
     process(clk, rst_n)
     begin

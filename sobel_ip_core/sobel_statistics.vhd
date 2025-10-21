@@ -33,21 +33,21 @@ end sobel_statistics;
 
 architecture Behavioral of sobel_statistics is
     -- Input counter signals (clk_ext domain)
-    signal input_counter  : unsigned(31 downto 0) := (others => '0');
-    signal input_handshake : std_logic := '0';
+    signal input_counter  : unsigned(31 downto 0);
+    signal input_handshake : std_logic;
     
     -- Output counter signals (clk_ext domain)
-    signal output_counter : unsigned(31 downto 0) := (others => '0');
-    signal output_handshake : std_logic := '0';
+    signal output_counter : unsigned(31 downto 0);
+    signal output_handshake : std_logic;
     
     -- Cycle counter signals (clk_int domain)
-    signal cycle_counter  : unsigned(31 downto 0) := (others => '0');
-    signal cycle_counter_sync : std_logic_vector(31 downto 0) := (others => '0');
+    signal cycle_counter  : unsigned(31 downto 0);
+    signal cycle_counter_sync : std_logic_vector(31 downto 0);
     
     -- CDC synchronization signals
-    signal cycle_counter_int : std_logic_vector(31 downto 0) := (others => '0');
-    signal sync_stage1 : std_logic_vector(31 downto 0) := (others => '0');
-    signal sync_stage2 : std_logic_vector(31 downto 0) := (others => '0');
+    signal cycle_counter_int : std_logic_vector(31 downto 0);
+    signal sync_stage1 : std_logic_vector(31 downto 0);
+    signal sync_stage2 : std_logic_vector(31 downto 0);
 
 begin
     -- Handshake detection

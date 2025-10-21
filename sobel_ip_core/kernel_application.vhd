@@ -25,9 +25,10 @@ entity kernel_application is
 end entity kernel_application;
 
 architecture Behavioral of kernel_application is
-    signal output_valid : std_logic := '0';
-    signal output_last  : std_logic := '0';
-    signal output_data  : gradient_pair := (others => (others => '0'));
+
+    signal output_valid : std_logic;
+    signal output_last  : std_logic;
+    signal output_data  : gradient_pair;
     
     -- Ready when downstream can accept data or we don't have valid data
     signal ready_int : std_logic;

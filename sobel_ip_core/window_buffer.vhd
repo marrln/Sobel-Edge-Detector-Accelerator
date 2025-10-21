@@ -37,18 +37,14 @@ architecture behavioral of window_buffer is
     signal pixel_buffer : pixel_buffer_type := (others => (others => '0'));
     
     -- Buffer control signals
-    signal buf_valid : std_logic := '0';
-    signal buf_last  : std_logic := '0';
-    signal column_counter : integer range 0 to columns-1 := 0;
-    signal row_counter : integer range 0 to rows-1 := 0;
+    signal buf_valid : std_logic;
+    signal buf_last  : std_logic;
+    signal column_counter : integer range 0 to columns-1;
+    signal row_counter : integer range 0 to rows-1;
     
     -- Internal ready signal
     signal internal_ready : std_logic;
-    
-    -- RAM synthesis attribute to ensure Block RAM inference
-    attribute ram_style : string;
-    attribute ram_style of pixel_buffer : signal is "block";
-    
+
 begin
     process(clk, rst_n)
     begin
