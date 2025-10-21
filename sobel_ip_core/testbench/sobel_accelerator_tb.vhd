@@ -65,9 +65,6 @@ architecture behavioral of sobel_accelerator_tb is
     signal output_done : boolean := false;
     signal all_done    : boolean := false;
 
-
-
-
 begin
     clk_int_proc: process
     begin
@@ -161,7 +158,7 @@ begin
                 px_count := px_count + 1;
                 if px_count <= 10 or px_count mod 10000 = 0 then
                     report "Sent pixel " & integer'image(px_count) & " = " & integer'image(pix) & 
-                           ", tready=" & std_logic'image(s_axis_tready);
+                            ", tready=" & std_logic'image(s_axis_tready);
                 end if;
             end if;
             wait until rising_edge(clk_ext);
@@ -200,7 +197,7 @@ begin
                 out_count := out_count + 1;
                 if out_count <= 10 or out_count mod 10000 = 0 then
                     report "Received pixel " & integer'image(out_count) & " = " & integer'image(to_integer(unsigned(pixel_val))) & 
-                           ", tvalid=" & std_logic'image(m_axis_tvalid);
+                            ", tvalid=" & std_logic'image(m_axis_tvalid);
                 end if;
             end if;
             wait until rising_edge(clk_ext);
