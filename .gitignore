@@ -3,7 +3,11 @@
 
 # vscode
 .vscode
-/sources
+/sobel_soc_built
+
+# zip files
+*.zip
+
 # txt files
 *.txt
 !data/**/*.txt
