@@ -155,8 +155,7 @@ begin
             while s_ready = '0' loop
                 wait until rising_edge(clk);
                 if (now - timeout_start) > SEND_TIMEOUT then
-                    report "Send timeout at pixel " & integer'image(line_count) 
-                           & " at time " & time'image(now) severity warning;
+                    report "Send timeout at pixel " & integer'image(line_count) & " at time " & time'image(now) severity warning;
                     exit;
                 end if;
             end loop;
@@ -212,8 +211,7 @@ begin
             while m_valid = '0' loop
                 wait until rising_edge(clk);
                 if (now - timeout_start) > RECEIVE_TIMEOUT then
-                    report "Receive timeout at pixel " & integer'image(pixel_count) 
-                           & " at time " & time'image(now) severity warning;
+                    report "Receive timeout at pixel " & integer'image(pixel_count) & " at time " & time'image(now) severity warning;
                     m_ready <= '0';
                     exit;
                 end if;
