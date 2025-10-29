@@ -11,8 +11,8 @@
 # These default paths are the typical user locations used during
 # development on the reference machine. Change them if you keep your
 # PetaLinux tools or XSA elsewhere.
-DEFAULT_PETALINUX_DIR="/home/phoebus/Desktop/peta-os"
-DEFAULT_XSA_PATH="/home/phoebus/Desktop/sobel_succ/design_1_wrapper.xsa"
+DEFAULT_PETALINUX_DIR="/home/user/Desktop/peta-os"
+DEFAULT_XSA_PATH="/home/user/Desktop/sobel/design_1_wrapper.xsa"
 project_name="sobel_soc" # Name of the PetaLinux project to create
 
 # PETALINUX tools path (either a directory containing settings.sh or the
