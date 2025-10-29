@@ -1,10 +1,10 @@
--- -- AXI4-Lite interface for Sobel IP core register access
--- -- Provides software control and monitoring of the Sobel accelerator
--- -- Register Map:
--- --     0x00: Control register (bit 0: system_enable)
--- --     0x04: Input pixel counter (read-only)
--- --     0x08: Output pixel counter (read-only)
--- --     0x0C: Clock cycle counter (read-only)
+-- AXI4-Lite interface for Sobel IP core register access
+-- Provides software control and monitoring of the Sobel accelerator
+-- Register Map:
+--     0x00: Control register (bit 0: system_enable)
+--     0x04: Input pixel counter (read-only)
+--     0x08: Output pixel counter (read-only)
+--     0x0C: Clock cycle counter (read-only)
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
