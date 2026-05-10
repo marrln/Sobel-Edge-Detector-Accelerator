@@ -1,2 +1,2 @@
 *.ipynb linguist-documentation
-*.tcl *.tcl linguist-detectable=false
+*.tcl linguist-detectable=false
