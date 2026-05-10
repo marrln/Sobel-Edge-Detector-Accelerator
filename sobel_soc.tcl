@@ -849,6 +849,8 @@ proc create_hier_cell_DMA { parentCell nameHier } {
   assign_bd_address -offset 0x00000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces DMA/axi_dma_0/Data_MM2S] [get_bd_addr_segs Processing_System/processing_system7_0/S_AXI_HP0/HP0_DDR_LOWOCM] -force
   assign_bd_address -offset 0x00000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces DMA/axi_dma_0/Data_S2MM] [get_bd_addr_segs Processing_System/processing_system7_0/S_AXI_HP2/HP2_DDR_LOWOCM] -force
   assign_bd_address -offset 0x43C00000 -range 0x00000400 -target_address_space [get_bd_addr_spaces Processing_System/processing_system7_0/Data] [get_bd_addr_segs DMA/axi_dma_0/S_AXI_LITE/Reg] -force
+  # NOTE: Added the assign AXI4-Lite base address for Sobel IP core manually
+  assign_bd_address -offset 0x43C10000 -range 0x00001000 -target_address_space [get_bd_addr_spaces Processing_System/processing_system7_0/Data] [get_bd_addr_segs Sobel_Edge_Detector/S_AXI_LITE/Reg] -force
 
   # Perform GUI Layout
   regenerate_bd_layout -layout_string {
