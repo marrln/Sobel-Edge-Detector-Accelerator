@@ -4,6 +4,10 @@
 This project presents the **design, implementation, and evaluation** of a complete **System-on-Chip (SoC)** solution for accelerating the **Sobel edge detection algorithm** on the **Xilinx Zynq-7000 AP SoC** platform.  
 The main objective is to leverage the combined architecture of the **Processing System (PS)** and **Programmable Logic (PL)** of the Zynq device to achieve a significant performance improvement compared to a pure software implementation.
 
+In the follwing sections, we detail the system architecture, implementation steps, and performance evaluation of both the software and hardware-accelerated versions of the Sobel edge detection algorithm. In the next image, we can see the Sobel Edge Detection process applied to a sample image.
+
+![Sobel Edge Detection Example](./data/sobel_example.png)
+
 ---
 
 ## System Description
